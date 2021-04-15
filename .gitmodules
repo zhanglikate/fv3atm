@@ -9,4 +9,4 @@
 [submodule "ccpp/physics"]
 	path = ccpp/physics
 	url = https://github.com/NOAA-GSL/ccpp-physics
-	branch = gsl/develop
+	branch = RRFS_cloud
