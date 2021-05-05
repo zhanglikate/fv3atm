@@ -98,7 +98,7 @@ module GFS_diagnostics
     type(GFS_init_type),          intent(in)    :: Init_parm
 
 !--- local variables
-    integer :: idt, idx, num, nb, nblks, NFXR
+    integer :: idt, idx, num, nb, nblks, NFXR, i
     character(len=2) :: xtra
     real(kind=kind_phys), parameter :: cn_one = 1._kind_phys
     real(kind=kind_phys), parameter :: cn_100 = 100._kind_phys
@@ -2424,6 +2424,20 @@ module GFS_diagnostics
          ExtDiag(idx)%data(nb)%var3 => IntDiag(nb)%dt3dt(:,:,9)
       enddo
 
+      if(Model%num_dfi_radar>0) then
+         idx = idx + 1
+         ExtDiag(idx)%axes = 3
+         ExtDiag(idx)%name = 'dt3dt_radar_tten'
+         ExtDiag(idx)%desc = 'temperature tendency due to dfi radar'
+         ExtDiag(idx)%unit = 'K s-1'
+         ExtDiag(idx)%mod_name = 'gfs_phys'
+         ExtDiag(idx)%time_avg = .TRUE.
+         allocate (ExtDiag(idx)%data(nblks))
+         do nb = 1,nblks
+            ExtDiag(idx)%data(nb)%var3 => IntDiag(nb)%dt3dt(:,:,10)
+         enddo
+      endif
+      
       idx = idx + 1
       ExtDiag(idx)%axes = 3
       ExtDiag(idx)%name = 'dt3dt_phys'
@@ -2433,7 +2447,7 @@ module GFS_diagnostics
       ExtDiag(idx)%time_avg = .TRUE.
       allocate (ExtDiag(idx)%data(nblks))
       do nb = 1,nblks
-         ExtDiag(idx)%data(nb)%var3 => IntDiag(nb)%dt3dt(:,:,10)
+         ExtDiag(idx)%data(nb)%var3 => IntDiag(nb)%dt3dt(:,:,11)
       enddo
 
       idx = idx + 1
@@ -2445,7 +2459,7 @@ module GFS_diagnostics
       ExtDiag(idx)%time_avg = .TRUE.
       allocate (ExtDiag(idx)%data(nblks))
       do nb = 1,nblks
-         ExtDiag(idx)%data(nb)%var3 => IntDiag(nb)%dt3dt(:,:,11)
+         ExtDiag(idx)%data(nb)%var3 => IntDiag(nb)%dt3dt(:,:,12)
       enddo
 
       idx = idx + 1
@@ -3583,6 +3597,25 @@ module GFS_diagnostics
         ExtDiag(idx)%data(nb)%var2 => Coupling(nb)%nifa2d
       enddo
     endif
+    
+    do i=1,Model%num_dfi_radar
+       idx = idx + 1
+       ExtDiag(idx)%axes = 3
+       if(i>1) then
+          write(ExtDiag(idx)%name,'(A,I0)') 'radar_tten_',i
+       else
+          ExtDiag(idx)%name = 'radar_tten'
+       endif
+       write(ExtDiag(idx)%desc,'(A,I0,A,I0)') 'temperature tendency due to dfi radar tendencies ',i,' of ',Model%num_dfi_radar
+       ExtDiag(idx)%unit = 'K s-1'
+       ExtDiag(idx)%mod_name = 'gfs_phys'
+       ExtDiag(idx)%time_avg = .FALSE.
+
+       allocate (ExtDiag(idx)%data(nblks))
+       do nb = 1,nblks
+         ExtDiag(idx)%data(nb)%var3 => Tbd(nb)%dfi_radar_tten(:,:,i)
+      enddo
+    enddo
 
     !! Cloud effective radii from Microphysics
     !if (Model%imp_physics == Model%imp_physics_thompson .or. Model%imp_physics == Model%imp_physics_wsm6 .or. Model%imp_physics == Model%imp_physics_fer_hires) then

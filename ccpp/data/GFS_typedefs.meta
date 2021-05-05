@@ -3153,6 +3153,12 @@
   dimensions = ()
   type = real
   kind = kind_phys
+[num_dfi_radar]
+  standard_name = num_dfi_radar
+  long_name = number of time ranges with dfi radar tendencies
+  units = count
+  dimensions = ()
+  type = integer
 [effr_in]
   standard_name = flag_for_cloud_effective_radii
   long_name = flag for cloud effective radii calculations in GFDL microphysics
@@ -3231,6 +3237,26 @@
   units = flag
   dimensions = ()
   type = logical
+[radar_tten_limits]
+  standard_name = allowed_bounds_of_radar_prescribed_tendencies
+  long_name = allowed bounds of prescribed microphysics temperature tendencies
+  units = K
+  dimensions = (2)
+  type = real
+  kind = kind_phys
+[fh_dfi_radar]
+  standard_name = times_at_which_dfi_radar_tten_is_available
+  long_name = times at which dfi_radar_tten is available
+  units = h
+  dimensions = (5)
+  type = real
+  kind = kind_phys
+[ix_dfi_radar]
+  standard_name = time_indices_in_dfi_radar_tten
+  long_name = time indices in dfi radar tten
+  units = index
+  dimensions = (4)
+  type = integer
 [shoc_parm(1)]
   standard_name = shoc_tke_dissipatation_pressure_threshold
   long_name = pressure below which extra TKE diss. is applied in SHOC
@@ -5775,6 +5801,13 @@
   type = real
   kind = kind_phys
   active = (do_myjsfc .or. do_myjpbl)
+[dfi_radar_tten]
+  standard_name = dfi_radar_tten
+  long_name = prescribed microphysics temperature tendency from radar data
+  units = K s-1
+  dimensions = (horizontal_dimension,vertical_dimension,num_dfi_radar)
+  type = real
+  kind = kind_phys
 
 ########################################################################
 [ccpp-table-properties]
@@ -6717,6 +6750,13 @@
   kind = kind_phys
   active = (flag_diagnostics_3D)
 [dt3dt(:,:,10)]
+  standard_name = cumulative_change_in_temperature_due_to_dfi_radar
+  long_name = cumulative change in temperature due to dfi radar
+  units = K
+  dimensions = (horizontal_dimension,vertical_dimension)
+  type = real
+  kind = kind_phys
+[dt3dt(:,:,11)]
   standard_name = cumulative_change_in_temperature_due_to_physics
   long_name = cumulative change in temperature due to physics
   units = K
@@ -6724,7 +6764,7 @@
   type = real
   kind = kind_phys
   active = (flag_diagnostics_3D)
-[dt3dt(:,:,11)]
+[dt3dt(:,:,12)]
   standard_name = cumulative_change_in_temperature_due_to_non_physics_processes
   long_name = cumulative change in temperature due to non-physics processed
   units = K
