@@ -246,6 +246,7 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: emi2_in(:,:,:)   => null()  !< anthropogenic background 3D input
     real (kind=kind_phys), pointer :: fire_MODIS (:,:) => null()  !< anthropogenic fire MODIS input
     real (kind=kind_phys), pointer :: fire_GBBEPx(:,:) => null()  !< anthropogenic fire GBBEPx input
+    real (kind=kind_phys), pointer :: fire2_GBBEPx(:,:,:) => null()  !< anthropogenic fire GBBEPx input
 
 !--- In (radiation only)
     real (kind=kind_phys), pointer :: sncovr (:)   => null()  !< snow cover in fraction over land
@@ -452,8 +453,10 @@ module GFS_typedefs
 
 !--- outgoing accumulated quantities
     real (kind=kind_phys), pointer :: rain_cpl  (:)  => null()   !< total rain precipitation
+    real (kind=kind_phys), pointer :: rain_cplchm  (:)  => null()!< total rain precipitation for chem model
     real (kind=kind_phys), pointer :: rainc_cpl (:)  => null()   !< convective rain precipitation
     real (kind=kind_phys), pointer :: snow_cpl  (:)  => null()   !< total snow precipitation
+    real (kind=kind_phys), pointer :: snow_cplchm  (:)  => null()!< total snow precipitation for chem model
     real (kind=kind_phys), pointer :: dusfc_cpl (:)  => null()   !< sfc u momentum flux
     real (kind=kind_phys), pointer :: dvsfc_cpl (:)  => null()   !< sfc v momentum flux
     real (kind=kind_phys), pointer :: dtsfc_cpl (:)  => null()   !< sfc sensible heat flux
@@ -2372,6 +2375,7 @@ module GFS_typedefs
     allocate (Sfcprop%emi2_in  (IM,Model%levs,3))
     allocate (Sfcprop%fire_MODIS  (IM,13))
     allocate (Sfcprop%fire_GBBEPx (IM,5))
+    allocate (Sfcprop%fire2_GBBEPx (IM,31,5))
 
     Sfcprop%slmsk     = clear_val
     Sfcprop%oceanfrac = clear_val
@@ -2397,6 +2401,7 @@ module GFS_typedefs
     Sfcprop%emi2_in   = clear_val
     Sfcprop%fire_MODIS  = clear_val
     Sfcprop%fire_GBBEPx = clear_val
+    Sfcprop%fire2_GBBEPx = clear_val
 
 !--- In (radiation only)
     allocate (Sfcprop%snoalb (IM))
@@ -2772,9 +2777,13 @@ module GFS_typedefs
 
     if (Model%cplflx .or. Model%do_sppt_any .or. Model%cplchm .or. Model%ca_global_any) then
       allocate (Coupling%rain_cpl (IM))
+      allocate (Coupling%rain_cplchm (IM))
       allocate (Coupling%snow_cpl (IM))
+      allocate (Coupling%snow_cplchm (IM))
       Coupling%rain_cpl = clear_val
       Coupling%snow_cpl = clear_val
+      Coupling%rain_cplchm = clear_val
+      Coupling%snow_cplchm = clear_val
     endif
 
     if (Model%cplflx .or. Model%cplwav) then

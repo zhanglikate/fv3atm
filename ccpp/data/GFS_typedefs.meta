@@ -634,6 +634,13 @@
   dimensions = (horizontal_loop_extent,5)
   type = real
   kind = kind_phys
+[fire2_GBBEPx]
+  standard_name = emission_fire2_GBBEPx
+  long_name = emission fire2 GBBEPx
+  units = various
+  dimensions = (horizontal_dimension,31,5)
+  type = real
+  kind = kind_phys
 [fire_MODIS]
   standard_name = emission_fire_MODIS
   long_name = emission fire MODIS
@@ -1747,6 +1754,14 @@
   type = real
   kind = kind_phys
   active = (flag_for_flux_coupling .or. flag_for_stochastic_physics_perturbations .or. flag_for_chemistry_coupling .or. flag_for_global_cellular_automata)
+[rain_cplchm]
+  standard_name = lwe_thickness_of_precipitation_amount_for_chemcoupling
+  long_name = total rain precipitation chem
+  units = m
+  dimensions = (horizontal_loop_extent)
+  type = real
+  kind = kind_phys
+  active = (flag_for_flux_coupling .or. flag_for_stochastic_physics_perturbations .or. flag_for_chemistry_coupling .or. flag_for_global_cellular_automata)
 [rainc_cpl]
   standard_name = lwe_thickness_of_convective_precipitation_amount_for_coupling
   long_name = total convective precipitation
@@ -1757,6 +1772,14 @@
 [snow_cpl]
   standard_name = lwe_thickness_of_snow_amount_for_coupling
   long_name = total snow precipitation
+  units = m
+  dimensions = (horizontal_loop_extent)
+  type = real
+  kind = kind_phys
+  active = (flag_for_flux_coupling .or. flag_for_stochastic_physics_perturbations .or. flag_for_chemistry_coupling .or. flag_for_global_cellular_automata)
+[snow_cplchm]
+  standard_name = lwe_thickness_of_snow_amount_for_chemcoupling
+  long_name = total snow precipitation chem
   units = m
   dimensions = (horizontal_loop_extent)
   type = real

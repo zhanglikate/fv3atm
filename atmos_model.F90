@@ -1472,8 +1472,10 @@ subroutine update_atmos_chemistry(state, rc)
           area(i,j)   = GFS_data(nb)%Grid%area(ix)
           stype(i,j)  = GFS_data(nb)%Sfcprop%stype(ix)
           rainc(i,j)  = GFS_data(nb)%Coupling%rainc_cpl(ix)
-          rain(i,j)   = GFS_data(nb)%Coupling%rain_cpl(ix)  &
-                      + GFS_data(nb)%Coupling%snow_cpl(ix)
+          !rain(i,j)   = GFS_data(nb)%Coupling%rain_cpl(ix)  &
+          !            + GFS_data(nb)%Coupling%snow_cpl(ix)
+          rain(i,j)   = GFS_data(nb)%Coupling%rain_cplchm(ix)  &
+                      + GFS_data(nb)%Coupling%snow_cplchm(ix)
           uustar(i,j) = GFS_data(nb)%Sfcprop%uustar(ix)
           sfcdsw(i,j) = GFS_data(nb)%Coupling%sfcdsw(ix)
           slmsk(i,j)  = GFS_data(nb)%Sfcprop%slmsk(ix)
@@ -1501,6 +1503,8 @@ subroutine update_atmos_chemistry(state, rc)
           if (.not.GFS_control%cplflx) then
             GFS_data(nb)%coupling%rain_cpl(ix) = zero
             GFS_data(nb)%coupling%snow_cpl(ix) = zero
+            GFS_data(nb)%coupling%rain_cplchm(ix) = zero
+            GFS_data(nb)%coupling%snow_cplchm(ix) = zero
           end if
         enddo
       enddo
