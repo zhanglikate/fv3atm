@@ -9,4 +9,4 @@
 [submodule "ccpp/physics"]
 	path = ccpp/physics
 	url = https://github.com/zhanglikate/ccpp-physics
-	branch = gsl/develop-chem
+	branch = gsl/fire-chem
