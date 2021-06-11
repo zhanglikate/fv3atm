@@ -508,6 +508,13 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: ca_shal  (:)   => null() !
     real (kind=kind_phys), pointer :: ca_rad   (:)   => null() !
     real (kind=kind_phys), pointer :: ca_micro (:)   => null() !
+    real (kind=kind_phys), pointer :: ca_sgs_gbbepx_frp(:) => null()
+    real (kind=kind_phys), pointer :: ca_emis_anthro(:) => null()
+    real (kind=kind_phys), pointer :: ca_emis_dust(:)   => null()
+    real (kind=kind_phys), pointer :: ca_emis_plume(:)  => null()
+    real (kind=kind_phys), pointer :: ca_emis_seas(:)   => null()
+    real (kind=kind_phys)          :: ca_sgs_emis_scale
+    integer, pointer :: vegtype_cpl(:)    => null()
     real (kind=kind_phys), pointer :: condition(:)   => null() !
     real (kind=kind_phys), pointer :: vfact_ca(:)    => null() !
     !--- stochastic physics
@@ -1068,6 +1075,7 @@ module GFS_typedefs
     integer              :: nseed_g         !< cellular automata seed frequency
     logical              :: do_ca           !< cellular automata main switch
     logical              :: ca_sgs          !< switch for sgs ca
+    logical              :: ca_sgs_emis     !< switch for sgs ca on tracer emissions
     logical              :: ca_global       !< switch for global ca on prognostic fields
     logical              :: ca_global_emis  !< switch for global ca application to tracer emissions
     logical              :: ca_global_any   !< true if ca_global or ca_global_emis are true
@@ -1616,6 +1624,8 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: ca_shal  (:)   => null()   !< cellular automata fraction
     real (kind=kind_phys), pointer :: ca_rad   (:)   => null()   !< cellular automata fraction
     real (kind=kind_phys), pointer :: ca_micro (:)   => null()   !< cellular automata fraction
+    real (kind=kind_phys), pointer :: ca_condition(:)=> null()   !< cellular automata fraction
+    real (kind=kind_phys), pointer :: ca_plume(:)    => null()   !< cellular automata fraction
 
     real (kind=kind_phys), pointer :: skebu_wts(:,:) => null()   !< 10 meter u wind speed
     real (kind=kind_phys), pointer :: skebv_wts(:,:) => null()   !< 10 meter v wind speed
@@ -2903,8 +2913,12 @@ module GFS_typedefs
     endif
 
    !-- cellular automata
+    allocate (Coupling%vegtype_cpl(IM))
     allocate (Coupling%condition(IM))
     allocate (Coupling%vfact_ca(Model%levs))
+    Coupling%vegtype_cpl = clear_val
+    Coupling%vfact_ca = clear_val
+    Coupling%condition = clear_val
     if (Model%do_ca) then
       allocate (Coupling%ca1      (IM))
       allocate (Coupling%ca2      (IM))
@@ -2914,7 +2928,6 @@ module GFS_typedefs
       allocate (Coupling%ca_shal  (IM))
       allocate (Coupling%ca_rad   (IM))
       allocate (Coupling%ca_micro (IM))
-      Coupling%vfact_ca = clear_val
       Coupling%ca1       = clear_val
       Coupling%ca2       = clear_val
       Coupling%ca3       = clear_val
@@ -2923,7 +2936,19 @@ module GFS_typedefs
       Coupling%ca_shal   = clear_val
       Coupling%ca_rad    = clear_val
       Coupling%ca_micro  = clear_val
-      Coupling%condition = clear_val
+      if(Model%ca_sgs_emis) then
+        allocate(Coupling%ca_sgs_gbbepx_frp(IM))
+        allocate(Coupling%ca_emis_anthro(IM))
+        allocate(Coupling%ca_emis_dust(IM))
+        allocate(Coupling%ca_emis_plume(IM))
+        allocate(Coupling%ca_emis_seas(IM))
+        Coupling%ca_sgs_gbbepx_frp = clear_val
+        Coupling%ca_emis_anthro = clear_val
+        Coupling%ca_emis_dust = clear_val
+        Coupling%ca_emis_plume = clear_val
+        Coupling%ca_emis_seas = clear_val
+        Coupling%ca_sgs_emis_scale = 0 ! must be 0, not zero or clear_val
+      endif
     endif
 
     ! -- GSDCHEM coupling options
@@ -3465,6 +3490,7 @@ module GFS_typedefs
     integer              :: nspinup        = 1
     logical              :: do_ca          = .false.
     logical              :: ca_sgs         = .false.
+    logical              :: ca_sgs_emis    = .false.
     logical              :: ca_global      = .false.
     logical              :: ca_global_emis = .false.
     logical              :: ca_smooth      = .false.
@@ -3655,7 +3681,7 @@ module GFS_typedefs
                           !--- cellular automata
                                nca, ncells, nlives, nca_g, ncells_g, nlives_g, nfracseed,   &
                                nseed, nseed_g, nthresh, do_ca,                              &
-                               ca_sgs, ca_global,iseed_ca,ca_smooth,                        &
+                               ca_sgs, ca_sgs_emis, ca_global,iseed_ca,ca_smooth,           &
                                nspinup,ca_amplitude,nsmooth,ca_closure,ca_entr,ca_trigger,  &
                           !--- IAU
                                iau_delthrs,iaufhrs,iau_inc_files,iau_filter_increments,     &
@@ -4361,6 +4387,7 @@ module GFS_typedefs
     Model%ca_global_any    = ca_global .or. ca_global_emis
     Model%do_ca            = do_ca
     Model%ca_sgs           = ca_sgs
+    Model%ca_sgs_emis      = ca_sgs_emis
     Model%iseed_ca         = iseed_ca
     Model%ca_smooth        = ca_smooth
     Model%nspinup          = nspinup
@@ -4370,6 +4397,13 @@ module GFS_typedefs
     Model%ca_closure       = ca_closure
     Model%ca_entr          = ca_entr
     Model%ca_trigger       = ca_trigger
+
+    if(Model%ca_sgs .and. Model%ca_sgs_emis) then
+      if(Model%me==Model%master) then
+        write(0,*) 'Cannot have both ca_sgs and ca_sgs_emis on at the same time.'
+      endif
+      stop 1
+    endif
 
     ! IAU flags
     !--- iau parameters
@@ -5448,6 +5482,7 @@ module GFS_typedefs
       print *, ' ca_global         : ', Model%ca_global
       print *, ' ca_global_emis    : ', Model%ca_global_emis
       print *, ' ca_sgs            : ', Model%ca_sgs
+      print *, ' ca_sgs_emis       : ', Model%ca_sgs_emis
       print *, ' do_ca             : ', Model%do_ca
       print *, ' iseed_ca          : ', Model%iseed_ca
       print *, ' ca_smooth         : ', Model%ca_smooth
@@ -6156,6 +6191,13 @@ module GFS_typedefs
       Diag%ktop_plume    = 0
       Diag%exch_h        = clear_val
       Diag%exch_m        = clear_val
+    endif
+
+    if(Model%do_ca .and. Model%ca_sgs_emis) then
+      allocate(Diag%ca_plume(IM))
+      allocate(Diag%ca_condition(IM))
+      Diag%ca_condition = clear_val
+      Diag%ca_plume = clear_val
     endif
 
     ! Auxiliary arrays in output for debugging

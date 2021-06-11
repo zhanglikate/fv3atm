@@ -2129,6 +2129,46 @@
   type = real
   kind = kind_phys
   active = (flag_for_cellular_automata)
+[ca_sgs_gbbepx_frp]
+  standard_name = GBBEPx_fire_radiative_power_for_stochastic_physics
+  long_name = GBBEPx fire radiative power for stochastic physics
+  units = MW
+  dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
+  active = (flag_for_cellular_automata)
+[ca_emis_anthro]
+  standard_name = fraction_of_cellular_automata_for_anthropogenic_emissions
+  long_name = fraction of cellular automata for anthropogenic emissions
+  units = frac
+  dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
+  active = (flag_for_cellular_automata)
+[ca_emis_dust]
+  standard_name = fraction_of_cellular_automata_for_dust_emissions
+  long_name = fraction of cellular automata for dust emissions
+  units = frac
+  dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
+  active = (flag_for_cellular_automata)
+[ca_emis_plume]
+  standard_name = fraction_of_cellular_automata_for_plume_rise_emissions
+  long_name = fraction of cellular automata for plume rise emissions
+  units = frac
+  dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
+  active = (flag_for_cellular_automata)
+[ca_emis_seas]
+  standard_name = fraction_of_cellular_automata_for_sea_salt_emissions
+  long_name = fraction of cellular automata for sea salt emissions
+  units = frac
+  dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
+  active = (flag_for_cellular_automata)
 [vfact_ca]
   standard_name = vertical_weight_for_ca
   long_name = vertical weight for ca
@@ -2144,6 +2184,12 @@
   type = real
   kind = kind_phys
   active = (flag_for_cellular_automata)
+[vegtype_cpl]
+  standard_name = vegetation_type_classification_for_coupling
+  long_name = vegetation type at each grid cell copied from vegtype
+  units = index
+  dimensions = (horizontal_dimension)
+  type = integer
 [condition]
   standard_name = physics_field_for_coupling
   long_name = physics_field_for_coupling
@@ -4270,6 +4316,12 @@
 [ca_sgs]
   standard_name = flag_for_sgs_cellular_automata
   long_name = switch for sgs ca
+  units = flag
+  dimensions = ()
+  type = logical
+[ca_sgs_emis]
+  standard_name = flag_for_sgs_cellular_automata_in_chemical_tracer_emissions
+  long_name = switch for sgs ca in chemical tracer emissions
   units = flag
   dimensions = ()
   type = logical
