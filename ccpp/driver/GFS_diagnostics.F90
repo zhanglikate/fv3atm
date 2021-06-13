@@ -778,6 +778,31 @@ module GFS_diagnostics
       ExtDiag(idx)%data(nb)%var2 => IntDiag(nb)%fluxr(:,39)
     enddo
 
+!--- aerosol diagnostics ---
+    idx = idx + 1
+    ExtDiag(idx)%axes = 2
+    ExtDiag(idx)%name = 'SCAT_550'
+    ExtDiag(idx)%desc = 'scattering at 550 nm'
+    ExtDiag(idx)%unit = 'numerical'
+    ExtDiag(idx)%mod_name = 'gfs_phys'
+    ExtDiag(idx)%intpl_method = 'bilinear'
+    allocate (ExtDiag(idx)%data(nblks))
+    do nb = 1,nblks
+      ExtDiag(idx)%data(nb)%var2 => IntDiag(nb)%fluxr(:,46)
+    enddo
+
+!--- aerosol diagnostics ---
+    idx = idx + 1
+    ExtDiag(idx)%axes = 2
+    ExtDiag(idx)%name = 'AAOD_550'
+    ExtDiag(idx)%desc = 'Absorption aerosol optical depth 550 nm'
+    ExtDiag(idx)%unit = 'numerical'
+    ExtDiag(idx)%mod_name = 'gfs_phys'
+    ExtDiag(idx)%intpl_method = 'bilinear'
+    allocate (ExtDiag(idx)%data(nblks))
+    do nb = 1,nblks
+      ExtDiag(idx)%data(nb)%var2 => IntDiag(nb)%fluxr(:,47)
+    enddo
 !
 !
 !--- accumulated diagnostics ---
@@ -4005,13 +4030,13 @@ module GFS_diagnostics
       idx = idx + 1
      if (num < 7) then
       select case (mod(num,3))
-        case (0)
+        case (1)
           ExtDiag(idx)%name = 'bcem'
           ExtDiag(idx)%desc = 'Black Carbon'
-        case (1)
+        case (2)
           ExtDiag(idx)%name = 'ocem'
           ExtDiag(idx)%desc = 'Organic Carbon'
-        case (2)
+        case (0)
           ExtDiag(idx)%name = 'so2em'
           ExtDiag(idx)%desc = 'SO2'
       end select
@@ -4027,12 +4052,55 @@ module GFS_diagnostics
       ExtDiag(idx)%axes = 2
       ExtDiag(idx)%unit = 'kg/m2/s'
       ExtDiag(idx)%mod_name = 'gfs_phys'
-     else ! num == 7
+     else if (num == 7) then
       ExtDiag(idx)%name = 'maod'
       ExtDiag(idx)%desc = 'MIE AOD'
       ExtDiag(idx)%axes = 2
       ExtDiag(idx)%unit = ' '
       ExtDiag(idx)%mod_name = 'gfs_phys'
+     else if (num == 8) then
+      ExtDiag(idx)%name = 'maodbc'
+      ExtDiag(idx)%desc = 'Chm BC AOD '
+      ExtDiag(idx)%axes = 2
+      ExtDiag(idx)%unit = ' '
+      ExtDiag(idx)%mod_name = 'gfs_phys'
+     else if (num == 9) then
+      ExtDiag(idx)%name = 'maodoc'
+      ExtDiag(idx)%desc = 'Chm OC AOD '
+      ExtDiag(idx)%axes = 2
+      ExtDiag(idx)%unit = ' '
+      ExtDiag(idx)%mod_name = 'gfs_phys'
+     else if (num == 10) then
+      ExtDiag(idx)%name = 'maoddust'
+      ExtDiag(idx)%desc = 'Chm DUST AOD '
+      ExtDiag(idx)%axes = 2
+      ExtDiag(idx)%unit = ' '
+      ExtDiag(idx)%mod_name = 'gfs_phys'
+     else if (num == 11) then
+      ExtDiag(idx)%name = 'maodseas'
+      ExtDiag(idx)%desc = 'Chm SEAS AOD '
+      ExtDiag(idx)%axes = 2
+      ExtDiag(idx)%unit = ' '
+      ExtDiag(idx)%mod_name = 'gfs_phys'
+     else if (num == 12) then
+      ExtDiag(idx)%name = 'maodsulf'
+      ExtDiag(idx)%desc = 'Chm SULF AOD '
+      ExtDiag(idx)%axes = 2
+      ExtDiag(idx)%unit = ' '
+      ExtDiag(idx)%mod_name = 'gfs_phys'
+     else if (num == 13) then
+      ExtDiag(idx)%name = 'mscat'
+      ExtDiag(idx)%desc = 'Chm SCAT AOD '
+      ExtDiag(idx)%axes = 2
+      ExtDiag(idx)%unit = ' '
+      ExtDiag(idx)%mod_name = 'gfs_phys'
+     else if (num == 14) then
+      ExtDiag(idx)%name = 'maaod'
+      ExtDiag(idx)%desc = 'Chm AAOD AOD '
+      ExtDiag(idx)%axes = 2
+      ExtDiag(idx)%unit = ' '
+      ExtDiag(idx)%mod_name = 'gfs_phys'
+
      endif !num < 7
 
       allocate (ExtDiag(idx)%data(nblks))

@@ -1500,11 +1500,11 @@ subroutine update_atmos_chemistry(state, rc)
           nb = Atm_block%blkno(ib,jb)
           ix = Atm_block%ixp(ib,jb)
           GFS_data(nb)%coupling%rainc_cpl(ix)  = zero
+          GFS_data(nb)%coupling%rain_cplchm(ix) = zero
+          GFS_data(nb)%coupling%snow_cplchm(ix) = zero
           if (.not.GFS_control%cplflx) then
             GFS_data(nb)%coupling%rain_cpl(ix) = zero
             GFS_data(nb)%coupling%snow_cpl(ix) = zero
-            GFS_data(nb)%coupling%rain_cplchm(ix) = zero
-            GFS_data(nb)%coupling%snow_cplchm(ix) = zero
           end if
         enddo
       enddo
