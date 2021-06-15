@@ -31,7 +31,7 @@ module GFS_typedefs
       integer, parameter :: NF_AELW = 3
       integer, parameter :: NSPC    = 5
       !integer, parameter :: NSPC1   = NSPC + 1
-      integer, parameter :: NSPC1   = NSPC + 3 !lzhang
+      integer, parameter :: NSPC1   = NSPC + 5 !lzhang
       ! from module_radiation_clouds
       integer, parameter :: NF_CLDS = 9
       ! from module_radiation_gases
@@ -3092,7 +3092,7 @@ module GFS_typedefs
     integer              :: nhfrad         = 0               !< number of timesteps for which to call radiation on physics timestep (coldstarts)
     integer              :: levr           = -99             !< number of vertical levels for radiation calculations
     !lzhang integer              :: nfxr           = 39+6            !< second dimension of input/output array fluxr
-    integer              :: nfxr           = 39+8            !< second dimension of input/output array fluxr
+    integer              :: nfxr           = 39+10            !< second dimension of input/output array fluxr
     logical              :: iaerclm        = .false.         !< flag for initializing aero data
     integer              :: iccn           =  0              !< logical to use IN CCN forcing for MG2/3
     integer              :: iflip          =  1              !< iflip - is not the same as flipv
@@ -6508,7 +6508,7 @@ module GFS_typedefs
     ! -- burning emission diagnostics for
     ! -- (in order): black carbon,
     ! -- organic carbon, and sulfur dioxide
-    allocate (Diag%abem(IM,14)) ! MIE AOD as 7, follow by aodbc,aodoc,aoddt,aodss,aodsu,sca,aaod
+    allocate (Diag%abem(IM,16)) ! MIE AOD as 7, follow by aodbc,aodoc,aoddt,aodss,aodsu,sca,aaod
     Diag%abem = zero
 
     ! -- initialize column burden diagnostics
