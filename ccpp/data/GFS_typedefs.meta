@@ -1747,6 +1747,14 @@
   type = real
   kind = kind_phys
   active = (flag_for_flux_coupling .or. flag_for_stochastic_physics_perturbations .or. flag_for_chemistry_coupling .or. flag_for_global_cellular_automata)
+[rain_cplchm]
+  standard_name = lwe_thickness_of_precipitation_amount_for_chemcoupling
+  long_name = total rain precipitation chem
+  units = m
+  dimensions = (horizontal_loop_extent)
+  type = real
+  kind = kind_phys
+  active = (flag_for_flux_coupling .or. flag_for_stochastic_physics_perturbations .or. flag_for_chemistry_coupling .or. flag_for_global_cellular_automata)
 [rainc_cpl]
   standard_name = lwe_thickness_of_convective_precipitation_amount_for_coupling
   long_name = total convective precipitation
@@ -1757,6 +1765,14 @@
 [snow_cpl]
   standard_name = lwe_thickness_of_snow_amount_for_coupling
   long_name = total snow precipitation
+  units = m
+  dimensions = (horizontal_loop_extent)
+  type = real
+  kind = kind_phys
+  active = (flag_for_flux_coupling .or. flag_for_stochastic_physics_perturbations .or. flag_for_chemistry_coupling .or. flag_for_global_cellular_automata)
+[snow_cplchm]
+  standard_name = lwe_thickness_of_snow_amount_for_chemcoupling
+  long_name = total snow precipitation chem
   units = m
   dimensions = (horizontal_loop_extent)
   type = real
@@ -7552,7 +7568,7 @@
   standard_name = instantaneous_anthopogenic_and_biomass_burning_emissions
   long_name = instantaneous anthopogenic and biomass burning emissions for black carbon, organic carbon, and sulfur dioxide
   units = kg m-2 s-1
-  dimensions = (horizontal_loop_extent,6)
+  dimensions = (horizontal_loop_extent,7)
   type = real
   kind = kind_phys
 [aecm]

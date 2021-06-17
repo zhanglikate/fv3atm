@@ -452,8 +452,10 @@ module GFS_typedefs
 
 !--- outgoing accumulated quantities
     real (kind=kind_phys), pointer :: rain_cpl  (:)  => null()   !< total rain precipitation
+    real (kind=kind_phys), pointer :: rain_cplchm  (:)  => null()!< total rain precipitation for chem model
     real (kind=kind_phys), pointer :: rainc_cpl (:)  => null()   !< convective rain precipitation
     real (kind=kind_phys), pointer :: snow_cpl  (:)  => null()   !< total snow precipitation
+    real (kind=kind_phys), pointer :: snow_cplchm  (:)  => null()!< total snow precipitation for chem model
     real (kind=kind_phys), pointer :: dusfc_cpl (:)  => null()   !< sfc u momentum flux
     real (kind=kind_phys), pointer :: dvsfc_cpl (:)  => null()   !< sfc v momentum flux
     real (kind=kind_phys), pointer :: dtsfc_cpl (:)  => null()   !< sfc sensible heat flux
@@ -2782,9 +2784,13 @@ module GFS_typedefs
 
     if (Model%cplflx .or. Model%do_sppt_any .or. Model%cplchm .or. Model%ca_global_any) then
       allocate (Coupling%rain_cpl (IM))
+      allocate (Coupling%rain_cplchm (IM))
       allocate (Coupling%snow_cpl (IM))
+      allocate (Coupling%snow_cplchm (IM))
       Coupling%rain_cpl = clear_val
       Coupling%snow_cpl = clear_val
+      Coupling%rain_cplchm = clear_val
+      Coupling%snow_cplchm = clear_val
     endif
 
     if (Model%cplflx .or. Model%cplwav) then

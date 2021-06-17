@@ -4086,13 +4086,13 @@ module GFS_diagnostics
       idx = idx + 1
      if (num < 7) then
       select case (mod(num,3))
-        case (0)
+        case (1)
           ExtDiag(idx)%name = 'bcem'
           ExtDiag(idx)%desc = 'Black Carbon'
-        case (1)
+        case (2)
           ExtDiag(idx)%name = 'ocem'
           ExtDiag(idx)%desc = 'Organic Carbon'
-        case (2)
+        case (0)
           ExtDiag(idx)%name = 'so2em'
           ExtDiag(idx)%desc = 'SO2'
       end select
