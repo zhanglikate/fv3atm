@@ -1,3 +1,8 @@
+#define EMI_DATA
+#define EMI2_DATA
+#define FENGSHA_DUST_DATA
+#define FENGSHA_DUST_DATA_INFO
+#define FIRE_OPT_GBBEPx
 module FV3GFS_io_mod
 
 !-----------------------------------------------------------------------
@@ -61,11 +66,13 @@ module FV3GFS_io_mod
   character(len=32)  :: fn_srf    = 'sfc_data.nc'
   character(len=32)  :: fn_phy    = 'phy_data.nc'
   character(len=32)  :: fn_dust12m= 'dust12m_data.nc'
+  character(len=32)  :: fn_dust   = 'dust_data.nc'
   character(len=32)  :: fn_emi    = 'emi_data.nc'
-  character(len=32)  :: fn_gbbepx = 'SMOKE_GBBEPx_data.nc'
+  character(len=32)  :: fn_emi2   = 'emi2_data.nc'
+  character(len=32)  :: fn_gbbepx = 'FIRE_GBBEPx_data.nc'
 
   !--- GFDL FMS netcdf restart data types defined in fms2_io
-  type(FmsNetcdfDomainFile_t) :: Oro_restart, Sfc_restart, Phy_restart, dust12m_restart, emi_restart, gbbepx_restart
+  type(FmsNetcdfDomainFile_t) :: Oro_restart, Sfc_restart, Phy_restart, dust12m_restart, dust_restart, emi_restart, emi2_restart, gbbepx_restart
   type(FmsNetcdfDomainFile_t) :: Oro_ls_restart, Oro_ss_restart
 
   !--- GFDL FMS restart containers
@@ -74,10 +81,11 @@ module FV3GFS_io_mod
   character(len=32),    allocatable,         dimension(:)       :: oro_ls_ss_name
   real(kind=kind_phys), allocatable, target, dimension(:,:,:)   :: oro_ls_var, oro_ss_var
   real(kind=kind_phys), allocatable, target, dimension(:,:,:,:) :: sfc_var3, phy_var3
-  character(len=32),    allocatable,         dimension(:)       :: dust12m_name, emi_name, gbbepx_name
-  real(kind=kind_phys), allocatable, target, dimension(:,:,:,:) :: gbbepx_var
+  character(len=32),    allocatable,         dimension(:)       :: dust12m_name, dust_name, emi_name, emi2_name, gbbepx_name
+! real(kind=kind_phys), allocatable, target, dimension(:,:,:,:) :: gbbepx_var
   real(kind=kind_phys), allocatable, target, dimension(:,:,:,:) :: dust12m_var
-  real(kind=kind_phys), allocatable, target, dimension(:,:,:)   :: emi_var
+  real(kind=kind_phys), allocatable, target, dimension(:,:,:)   :: dust_var, emi_var, gbbepx_var
+  real(kind=kind_phys), allocatable, target, dimension(:,:,:,:) :: emi2_var
   !--- Noah MP restart containers
   real(kind=kind_phys), allocatable, target, dimension(:,:,:,:) :: sfc_var3sn,sfc_var3eq,sfc_var3zn
 
@@ -522,7 +530,7 @@ module FV3GFS_io_mod
     integer :: nvar_o2, nvar_s2m, nvar_s2o, nvar_s3
     integer :: nvar_oro_ls_ss
     integer :: nvar_s2r, nvar_s2mp, nvar_s3mp, isnow
-    integer :: nvar_emi, nvar_dust12m, nvar_gbbepx
+    integer :: nvar_dust, nvar_emi, nvar_emi2, nvar_dust12m, nvar_gbbepx
     real(kind=kind_phys), pointer, dimension(:,:)   :: var2_p  => NULL()
     real(kind=kind_phys), pointer, dimension(:,:,:) :: var3_p  => NULL()
     real(kind=kind_phys), pointer, dimension(:,:,:) :: var3_p1 => NULL()
@@ -551,6 +559,11 @@ module FV3GFS_io_mod
       nvar_gbbepx  = 0
       nvar_emi     = 0
     endif
+    !-- global fire
+    nvar_dust   = 5
+    nvar_emi    = 10
+    nvar_emi2   = 3
+    nvar_gbbepx = 5
 
     if (Model%lsm == Model%lsm_ruc .and. warm_start) then
       if(Model%rdlai) then
@@ -692,6 +705,214 @@ module FV3GFS_io_mod
     !--- deallocate containers and free restart container
     deallocate(oro_name2, oro_var2)
 
+#ifdef FENGSHA_DUST_DATA
+    !--- Dust input FILE
+    !--- open file
+    infile=trim(indir)//'/'//trim(fn_dust)
+    amiopen=open_file(dust_restart, trim(infile), 'read', domain=fv_domain, is_restart=.true., dont_add_res_to_filename=.true.)
+    if (.not.amiopen) call mpp_error( FATAL, 'Error with opening file'//trim(infile) )
+
+    if (.not. allocated(dust_name)) then
+    !--- allocate the various containers needed for fengsha dust data
+      allocate(dust_name(nvar_dust))
+      allocate(dust_var(nx,ny,nvar_dust))
+
+      dust_name(1)  = 'clay'
+      dust_name(2)  = 'rdrag'
+      dust_name(3)  = 'sand'
+      dust_name(4)  = 'ssm'
+      dust_name(5)  = 'uthr'
+
+      !--- register axis
+      call register_axis(dust_restart, 'lon', 'X')
+      call register_axis(dust_restart, 'lat', 'Y')
+      !--- register the 2D fields
+      do num = 1,nvar_dust
+        var2_p => dust_var(:,:,num)
+        call register_restart_field(dust_restart, dust_name(num), var2_p, dimensions=(/'lat ', 'lon '/))
+      enddo
+      nullify(var2_p)
+    endif
+
+    !--- read new GSL created dust restart/data
+    call mpp_error(NOTE,'reading dust information from INPUT/dust_data.tile*.nc')
+    call read_restart(dust_restart)
+    call close_file(dust_restart)
+
+    do nb = 1, Atm_block%nblks
+      !--- 2D variables
+      do ix = 1, Atm_block%blksz(nb)
+        i = Atm_block%index(nb)%ii(ix) - isc + 1
+        j = Atm_block%index(nb)%jj(ix) - jsc + 1
+        Sfcprop(nb)%dust_in(ix,1)  = dust_var(i,j,1)
+        Sfcprop(nb)%dust_in(ix,2)  = dust_var(i,j,2)
+        Sfcprop(nb)%dust_in(ix,3)  = dust_var(i,j,3)
+        Sfcprop(nb)%dust_in(ix,4)  = dust_var(i,j,4)
+        Sfcprop(nb)%dust_in(ix,5)  = dust_var(i,j,5)
+      enddo
+    enddo
+
+    deallocate(dust_name,dust_var)
+#endif
+
+#ifdef EMI_DATA
+    !--- open anthropogenic emission file
+    infile=trim(indir)//'/'//trim(fn_emi)
+    amiopen=open_file(emi_restart, trim(infile), 'read', domain=fv_domain, is_restart=.true., dont_add_res_to_filename=.true.)
+    if (.not.amiopen) call mpp_error( FATAL, 'Error with opening file'//trim(infile) )
+
+    if (.not. allocated(emi_name)) then
+     !--- allocate the various containers needed for anthropogenic emission data
+      allocate(emi_name(nvar_emi))
+      allocate(emi_var(nx,ny,nvar_emi))
+
+      emi_name(1)  = 'e_bc'
+      emi_name(2)  = 'e_oc'
+      emi_name(3)  = 'e_sulf'
+      emi_name(4)  = 'e_pm_25'
+      emi_name(5)  = 'e_so2'
+      emi_name(6)  = 'e_pm_10'
+      emi_name(7)  = 'dm0'
+      emi_name(8)  = 'ero1'
+      emi_name(9)  = 'ero2'
+      emi_name(10) = 'ero3'
+      !--- register axis
+      call register_axis( emi_restart, "lon", 'X' )
+      call register_axis( emi_restart, "lat", 'Y' )
+      !--- register the 2D fields
+      do num = 1,nvar_emi
+        var2_p => emi_var(:,:,num)
+        call register_restart_field(emi_restart, emi_name(num), var2_p, dimensions=(/'lat ', 'lon '/))
+      enddo
+      nullify(var2_p)
+    endif
+
+    !--- read new GSL created emi restart/data
+    call mpp_error(NOTE,'reading emi information from INPUT/emi_data.tile*.nc')
+    call read_restart(emi_restart)
+    call close_file(emi_restart)
+
+    do nb = 1, Atm_block%nblks
+      !--- 2D variables
+      do ix = 1, Atm_block%blksz(nb)
+        i = Atm_block%index(nb)%ii(ix) - isc + 1
+        j = Atm_block%index(nb)%jj(ix) - jsc + 1
+        Sfcprop(nb)%emi_in_cplchp(ix,1)  = emi_var(i,j,1)
+        Sfcprop(nb)%emi_in_cplchp(ix,2)  = emi_var(i,j,2)
+        Sfcprop(nb)%emi_in_cplchp(ix,3)  = emi_var(i,j,3)
+        Sfcprop(nb)%emi_in_cplchp(ix,4)  = emi_var(i,j,4)
+        Sfcprop(nb)%emi_in_cplchp(ix,5)  = emi_var(i,j,5)
+        Sfcprop(nb)%emi_in_cplchp(ix,6)  = emi_var(i,j,6)
+        Sfcprop(nb)%emi_in_cplchp(ix,7)  = emi_var(i,j,7)
+        Sfcprop(nb)%emi_in_cplchp(ix,8)  = emi_var(i,j,8)
+        Sfcprop(nb)%emi_in_cplchp(ix,9)  = emi_var(i,j,9)
+        Sfcprop(nb)%emi_in_cplchp(ix,10) = emi_var(i,j,10)
+      enddo
+    enddo
+
+    !--- deallocate containers and free restart container
+    deallocate(emi_name, emi_var)
+#endif
+
+#ifdef EMI2_DATA
+    infile=trim(indir)//'/'//trim(fn_emi2)
+    amiopen=open_file(emi2_restart, trim(infile), 'read', domain=fv_domain, is_restart=.true., dont_add_res_to_filename=.true.)
+    if (.not.amiopen) call mpp_error( FATAL, 'Error with opening file'//trim(infile) )
+
+    if (.not. allocated(emi2_name)) then
+    !--- allocate the various containers needed for orography data
+      allocate(emi2_name(nvar_emi2))
+      allocate(emi2_var(nx,ny,64,nvar_emi2))
+
+      emi2_name(1)  = 'h2o2'
+      emi2_name(2)  = 'no3'
+      emi2_name(3)  = 'oh'
+
+      !--- register axis
+      call register_axis(emi2_restart, 'lon', 'X')
+      call register_axis(emi2_restart, 'lat', 'Y')
+      call register_axis(emi2_restart, 'z', 64)
+      !--- register the 3D fields
+      do num = 1,nvar_emi2
+        var3_p2 => emi2_var(:,:,:,num)
+        call register_restart_field(emi2_restart, emi2_name(num), var3_p2, dimensions=(/'z', 'lat ', 'lon '/),&
+                                  &is_optional=.not.mand)
+      enddo
+      nullify(var3_p2)
+    endif
+
+    !--- read new GSL created emi2 restart/data
+    call mpp_error(NOTE,'reading emi2 information from INPUT/emi2_data.tile*.nc')
+    call read_restart(emi2_restart)
+    call close_file(emi2_restart)
+
+    do nb = 1, Atm_block%nblks
+      !--- 3D variables
+      do ix = 1, Atm_block%blksz(nb)
+        i = Atm_block%index(nb)%ii(ix) - isc + 1
+        j = Atm_block%index(nb)%jj(ix) - jsc + 1
+        do k = 1, 64
+          Sfcprop(nb)%emi2_in(ix,k,1)  = emi2_var(i,j,k,1)
+          Sfcprop(nb)%emi2_in(ix,k,2)  = emi2_var(i,j,k,2)
+          Sfcprop(nb)%emi2_in(ix,k,3)  = emi2_var(i,j,k,3)
+        enddo
+      enddo
+    enddo
+
+    deallocate(emi2_name,emi2_var)
+#endif
+
+#ifdef FIRE_OPT_GBBEPx
+    !--- open file
+    infile=trim(indir)//'/'//trim(fn_gbbepx)
+    amiopen=open_file(gbbepx_restart, trim(infile), 'read', domain=fv_domain, is_restart=.true., dont_add_res_to_filename=.true.)
+    if (.not.amiopen) call mpp_error( FATAL, 'Error with opening file'//trim(infile) )
+
+    if (.not. allocated(gbbepx_name)) then
+      !--- allocate the various containers needed for gbbepx fire data
+      allocate(gbbepx_name(nvar_gbbepx))
+      allocate(gbbepx_var(nx,ny,nvar_gbbepx))
+
+      gbbepx_name(1)  = 'ebu_bc'
+      gbbepx_name(2)  = 'ebu_oc'
+      gbbepx_name(3)  = 'ebu_pm_25'
+      gbbepx_name(4)  = 'ebu_so2'
+      gbbepx_name(5)  = 'ebu_frp'
+      !--- register axis
+      call register_axis( gbbepx_restart, "lon", 'X' )
+      call register_axis( gbbepx_restart, "lat", 'Y' )
+      !--- register the 2D fields
+      do num = 1,nvar_gbbepx
+        var2_p => gbbepx_var(:,:,num)
+        call register_restart_field(gbbepx_restart, gbbepx_name(num), var2_p, dimensions=(/'lat ', 'lon '/))
+      enddo
+      nullify(var2_p)
+    endif
+
+    !--- read new GSL created gbbepx restart/data
+    call mpp_error(NOTE,'reading gbbepx information from INPUT/FIRE_GBBEPx_data.nc')
+    call read_restart(gbbepx_restart)
+    call close_file(gbbepx_restart)
+
+    do nb = 1, Atm_block%nblks
+      !--- 2D variables
+      do ix = 1, Atm_block%blksz(nb)
+        i = Atm_block%index(nb)%ii(ix) - isc + 1
+        j = Atm_block%index(nb)%jj(ix) - jsc + 1
+        !--- assign hprime(1:10) and hprime(15:24) with new oro stat data
+        Sfcprop(nb)%fire_GBBEPx(ix,1)  = gbbepx_var(i,j,1)
+        Sfcprop(nb)%fire_GBBEPx(ix,2)  = gbbepx_var(i,j,2)
+        Sfcprop(nb)%fire_GBBEPx(ix,3)  = gbbepx_var(i,j,3)
+        Sfcprop(nb)%fire_GBBEPx(ix,4)  = gbbepx_var(i,j,4)
+        Sfcprop(nb)%fire_GBBEPx(ix,5)  = gbbepx_var(i,j,5)
+      enddo
+    enddo
+
+    deallocate(gbbepx_name, gbbepx_var)
+#endif
+
+
+#if 0
     if_smoke: if(Model%rrfs_smoke) then  ! for RRFS-Smoke
 
     !--- Dust input FILE
@@ -835,6 +1056,7 @@ module FV3GFS_io_mod
 
     deallocate(gbbepx_name, gbbepx_var)
     endif if_smoke  ! RRFS_Smoke
+#endif
 
     !--- Modify/read-in additional orographic static fields for GSL drag suite
     if (Model%gwd_opt==3 .or. Model%gwd_opt==33 .or. &
