@@ -748,7 +748,7 @@
   active = (flag_for_chemistry_package_coupling)
 [emi_in_cplchp]
   standard_name = anthropogenic_background_input_cplchp
-  long_name = anthropogenic background input
+  long_name = anthropogenic background input cplchp
   units = various
   dimensions = (horizontal_loop_extent,10)
   type = real

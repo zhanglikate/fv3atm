@@ -554,16 +554,17 @@ module FV3GFS_io_mod
       nvar_dust12m = 5
       nvar_gbbepx  = 3
       nvar_emi     = 1
+    else if (Model%cplchp) then
+    !-- global fire
+          nvar_dust   = 5
+    nvar_emi    = 10
+    nvar_emi2   = 3
+    nvar_gbbepx = 5
     else
       nvar_dust12m = 0
       nvar_gbbepx  = 0
       nvar_emi     = 0
     endif
-    !-- global fire
-    nvar_dust   = 5
-    nvar_emi    = 10
-    nvar_emi2   = 3
-    nvar_gbbepx = 5
 
     if (Model%lsm == Model%lsm_ruc .and. warm_start) then
       if(Model%rdlai) then
@@ -833,6 +834,7 @@ module FV3GFS_io_mod
       call register_axis(emi2_restart, 'lat', 'Y')
       call register_axis(emi2_restart, 'z', 64)
       !--- register the 3D fields
+      mand = .false. 
       do num = 1,nvar_emi2
         var3_p2 => emi2_var(:,:,:,num)
         call register_restart_field(emi2_restart, emi2_name(num), var3_p2, dimensions=(/'z', 'lat ', 'lon '/),&
@@ -937,6 +939,7 @@ module FV3GFS_io_mod
       call register_axis(dust12m_restart, 'lat', 'Y')
       call register_axis(dust12m_restart, 'time', 12)
       !--- register the 3D fields
+      mand = .false. 
       do num = 1,nvar_dust12m
         var3_p2 => dust12m_var(:,:,:,num)
         call register_restart_field(dust12m_restart, dust12m_name(num), var3_p2, dimensions=(/'time', 'lat ', 'lon '/),&

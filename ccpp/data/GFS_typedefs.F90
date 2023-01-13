@@ -4338,7 +4338,7 @@ module GFS_typedefs
     Model%aer_ra_feedback   = aer_ra_feedback
     Model%aerchem_onoff     = aerchem_onoff
     Model%bio_emiss_opt     = bio_emiss_opt
-!    Model%biomass_burn_opt  = biomass_burn_opt
+    Model%biomass_burn_cplchp  = biomass_burn_cplchp
     Model%chem_conv_tr      = chem_conv_tr
     Model%chem_in_opt       = chem_in_opt
     Model%chem_opt          = chem_opt
