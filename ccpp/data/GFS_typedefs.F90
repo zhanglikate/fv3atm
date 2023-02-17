@@ -1,6 +1,6 @@
 module GFS_typedefs
 
-   use machine,                  only: kind_phys, kind_dbl_prec
+   use machine,                  only: kind_phys, kind_dbl_prec, kind_sngl_prec
    use physcons,                 only: con_cp, con_fvirt, con_g,                       &
                                        con_hvap, con_hfus, con_pi, con_rd, con_rv,     &
                                        con_t0c, con_cvap, con_cliq, con_eps, con_epsq, &
@@ -466,6 +466,12 @@ module GFS_typedefs
 !   real (kind=kind_phys), pointer :: zorlwav_cpl(:)          => null()   !< roughness length from wave model
     !--- also needed for ice/ocn coupling 
     real (kind=kind_phys), pointer :: slimskin_cpl(:)=> null()   !< aoi_fld%slimskin(item,lan)
+    !--- variables needed for use_med_flux =.TRUE.
+    real (kind=kind_phys), pointer :: dusfcin_med(:)         => null()   !< sfc u momentum flux over ocean
+    real (kind=kind_phys), pointer :: dvsfcin_med(:)         => null()   !< sfc v momentum flux over ocean
+    real (kind=kind_phys), pointer :: dtsfcin_med(:)         => null()   !< sfc latent heat flux over ocean
+    real (kind=kind_phys), pointer :: dqsfcin_med(:)         => null()   !< sfc sensible heat flux over ocean
+    real (kind=kind_phys), pointer :: ulwsfcin_med(:)        => null()   !< sfc upward lw flux over ocean
 
 !--- outgoing accumulated quantities
     real (kind=kind_phys), pointer :: rain_cpl  (:)  => null()   !< total rain precipitation
@@ -583,10 +589,13 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: qci_conv(:,:)   => null()  !< convective cloud condesate after rainout
     real (kind=kind_phys), pointer :: pfi_lsan(:,:)   => null()  !< instantaneous 3D flux of ice    nonconvective precipitation (kg m-2 s-1)
     real (kind=kind_phys), pointer :: pfl_lsan(:,:)   => null()  !< instantaneous 3D flux of liquid nonconvective precipitation (kg m-2 s-1)
+
+    !-- prognostic updraft area fraction coupling in convection
+    real (kind=kind_phys), pointer :: tmf (:,:) => null()         !< tmf to be passed from turublence scheme to convection
+    real (kind=kind_phys), pointer :: dqdt_qmicro(:,:) => null()  !< instantanious microphysics tendency to be passed from MP to convection
    !-- chemistry coupling
     real (kind=kind_phys), pointer :: buffer_ebu (:,:,:,:)   => null()  !<
     real (kind=kind_phys), pointer :: faersw_cpl(:,:,:,:)    => null()  !<
-
     !--- instantaneous total moisture tendency for smoke coupling:
     real (kind=kind_phys), pointer :: dqdti   (:,:)   => null()  !< rrfs_smoke=true only; instantaneous total moisture tendency (kg/kg/s)
 
@@ -689,6 +698,7 @@ module GFS_typedefs
     logical              :: use_cice_alb    !< default .false. - i.e. don't use albedo imported from the ice model
     logical              :: cpl_imp_mrg     !< default no merge import with internal forcings
     logical              :: cpl_imp_dbg     !< default no write import data to file post merge
+    logical              :: use_med_flux    !< default .false. - i.e. don't use atmosphere-ocean fluxes imported from mediator
 
 !--- integrated dynamics through earth's atmosphere
     logical              :: lsidea
@@ -1034,6 +1044,7 @@ module GFS_typedefs
     integer              :: imfshalcnv_gf       = 3 !< flag for scale- & aerosol-aware Grell-Freitas scheme (GSD)
     integer              :: imfshalcnv_ntiedtke = 4 !< flag for new Tiedtke scheme (CAPS)
     logical              :: hwrf_samfdeep           !< flag for HWRF SAMF deepcnv scheme (HWRF)
+    logical              :: progsigma               !< flag for prognostic area fraction in samf ddepcnv scheme (GFS)   
     integer              :: imfdeepcnv      !< flag for mass-flux deep convection scheme
                                             !<     1: July 2010 version of SAS conv scheme
                                             !<           current operational version as of 2016
@@ -1311,6 +1322,7 @@ module GFS_typedefs
     integer              :: ntgv            !< tracer index for graupel particle volume
     integer              :: nthv            !< tracer index for hail particle volume
     integer              :: ntke            !< tracer index for kinetic energy
+    integer              :: ntsigma         !< tracer index for updraft area fraction  
     integer              :: nto             !< tracer index for oxygen ion
     integer              :: nto2            !< tracer index for oxygen
     integer              :: ntwa            !< tracer index for water friendly aerosol
@@ -1320,20 +1332,6 @@ module GFS_typedefs
     integer              :: ntdms           !< tracer index for DMS
     integer              :: ntmsa           !< tracer index for msa
     integer              :: ntpp25          !< tracer index for pp25
-    integer              :: ntbc1           !< tracer index for bc1
-    integer              :: ntbc2           !< tracer index for bc2
-    integer              :: ntoc1           !< tracer index for oc1
-    integer              :: ntoc2           !< tracer index for oc2
-    integer              :: ntdust1         !< tracer index for dust 1
-    integer              :: ntdust2         !< tracer index for dust 2
-    integer              :: ntdust3         !< tracer index for dust 3
-    integer              :: ntdust4         !< tracer index for dust 4
-    integer              :: ntdust5         !< tracer index for dust 5
-    integer              :: ntss1           !< tracer index for sea salt 1
-    integer              :: ntss2           !< tracer index for sea salt 2
-    integer              :: ntss3           !< tracer index for sea salt 3
-    integer              :: ntss4           !< tracer index for sea salt 4
-    integer              :: ntss5           !< tracer index for sea salt 5
     integer              :: ntpp10          !< tracer index for pp10
     integer              :: ntsmoke         !< tracer index for smoke
     integer              :: ntdust          !< tracer index for dust
@@ -1342,6 +1340,21 @@ module GFS_typedefs
     integer              :: ntchm           !< number of prognostic chemical tracers (advected)
     integer              :: ntchs           !< tracer index for first prognostic chemical tracer
     integer              :: ntche           !< tracer index for last prognostic chemical tracer
+    integer              :: ntdu1           !< tracer index for dust bin1
+    integer              :: ntdu2           !< tracer index for dust bin2
+    integer              :: ntdu3           !< tracer index for dust bin3
+    integer              :: ntdu4           !< tracer index for dust bin4
+    integer              :: ntdu5           !< tracer index for dust bin5
+    integer              :: ntss1           !< tracer index for sea salt bin1
+    integer              :: ntss2           !< tracer index for sea salt bin2
+    integer              :: ntss3           !< tracer index for sea salt bin3
+    integer              :: ntss4           !< tracer index for sea salt bin4
+    integer              :: ntss5           !< tracer index for sea salt bin5
+    integer              :: ntsu            !< tracer index for sulfate
+    integer              :: ntbcl           !< tracer index for BCPHILIC
+    integer              :: ntbcb           !< tracer index for BCPHOBIC
+    integer              :: ntocl           !< tracer index for OCPHILIC
+    integer              :: ntocb           !< tracer index for OCPHOBIC
     integer              :: ndchm           !< number of diagnostic chemical tracers (not advected)
     integer              :: ndchs           !< tracer index for first diagnostic chemical tracer
     integer              :: ndche           !< tracer index for last diagnostic chemical tracer
@@ -2523,15 +2536,18 @@ module GFS_typedefs
        end if
 
     end if
+       allocate (Sfcprop%rmol   (IM ))
+       allocate (Sfcprop%flhc   (IM ))
+       allocate (Sfcprop%flqc   (IM ))
+       Sfcprop%rmol        = clear_val
+       Sfcprop%flhc        = clear_val
+       Sfcprop%flqc        = clear_val
     if (Model%do_mynnsfclay) then
     ! For MYNN surface layer scheme
        !print*,"Allocating all MYNN-sfclay variables"
        allocate (Sfcprop%ustm   (IM ))
        allocate (Sfcprop%zol    (IM ))
        allocate (Sfcprop%mol    (IM ))
-       allocate (Sfcprop%rmol   (IM ))
-       allocate (Sfcprop%flhc   (IM ))
-       allocate (Sfcprop%flqc   (IM ))
        allocate (Sfcprop%chs2   (IM ))
        allocate (Sfcprop%cqs2   (IM ))
        allocate (Sfcprop%lh     (IM ))
@@ -2540,9 +2556,6 @@ module GFS_typedefs
        Sfcprop%ustm        = clear_val
        Sfcprop%zol         = clear_val
        Sfcprop%mol         = clear_val
-       Sfcprop%rmol        = clear_val
-       Sfcprop%flhc        = clear_val
-       Sfcprop%flqc        = clear_val
        Sfcprop%chs2        = clear_val
        Sfcprop%cqs2        = clear_val
        Sfcprop%lh          = clear_val
@@ -2677,6 +2690,21 @@ module GFS_typedefs
 !     Coupling%sfc_alb_nir_dif_cpl   = clear_val
 !     Coupling%sfc_alb_vis_dir_cpl   = clear_val
 !     Coupling%sfc_alb_vis_dif_cpl   = clear_val
+
+      ! -- Coupling options to retrive atmosphere-ocean fluxes from mediator
+      if (Model%use_med_flux) then
+        allocate (Coupling%dusfcin_med (IM))
+        allocate (Coupling%dvsfcin_med (IM))
+        allocate (Coupling%dtsfcin_med (IM))
+        allocate (Coupling%dqsfcin_med (IM))
+        allocate (Coupling%ulwsfcin_med(IM))
+
+        Coupling%dusfcin_med  = clear_val
+        Coupling%dvsfcin_med  = clear_val
+        Coupling%dtsfcin_med  = clear_val
+        Coupling%dqsfcin_med  = clear_val
+        Coupling%ulwsfcin_med = clear_val
+      end if
 
       !--- accumulated quantities
       allocate (Coupling%dusfc_cpl  (IM))
@@ -2840,6 +2868,14 @@ module GFS_typedefs
       Coupling%psurfi_cpl  = clear_val
     endif
 
+    !--prognostic closure - moisture coupling
+    if(Model%progsigma)then
+       allocate(Coupling%dqdt_qmicro (IM,Model%levs))
+       allocate(Coupling%tmf (IM,Model%levs))
+       Coupling%tmf = clear_val
+       Coupling%dqdt_qmicro = clear_val
+    endif
+
     !--- stochastic physics option
     if (Model%do_sppt .or. Model%ca_global) then
       allocate (Coupling%sppt_wts  (IM,Model%levs))
@@ -2906,6 +2942,7 @@ module GFS_typedefs
       allocate (Coupling%min_fplume(IM))
       allocate (Coupling%max_fplume(IM))
       allocate (Coupling%rrfs_hwp  (IM))
+      allocate (Coupling%dqdti        (IM,Model%levs))
       Coupling%emdust     = clear_val
       Coupling%emseas     = clear_val
       Coupling%emanoc     = clear_val
@@ -2921,6 +2958,7 @@ module GFS_typedefs
       Coupling%min_fplume = clear_val
       Coupling%max_fplume = clear_val
       Coupling%rrfs_hwp   = clear_val
+      Coupling%dqdti      = clear_val
     endif
 
     if (Model%imfdeepcnv == Model%imfdeepcnv_gf) then
@@ -2992,6 +3030,8 @@ module GFS_typedefs
     logical :: exists
     real(kind=kind_phys) :: tem
     real(kind=kind_phys) :: rinc(5)
+    real(kind=kind_sngl_prec) :: rinc4(5)
+    real(kind=kind_dbl_prec) :: rinc8(5)
     real(kind=kind_phys) :: wrk(1)
     real(kind=kind_phys), parameter :: con_hr = 3600.
 
@@ -3026,6 +3066,7 @@ module GFS_typedefs
     logical              :: use_cice_alb   = .false.         !< default no cice albedo
     logical              :: cpl_imp_mrg    = .false.         !< default no merge import with internal forcings
     logical              :: cpl_imp_dbg    = .false.         !< default no write import data to file post merge
+    logical              :: use_med_flux   = .false.         !< default no atmosphere-ocean fluxes from mediator
 
 !--- integrated dynamics through earth's atmosphere
     logical              :: lsidea         = .false.
@@ -3303,6 +3344,7 @@ module GFS_typedefs
 
     logical              :: hwrf_samfdeep     = .false.               !< flag for HWRF SAMF deepcnv scheme
     logical              :: hwrf_samfshal     = .false.               !< flag for HWRF SAMF shalcnv scheme
+    logical              :: progsigma         = .false.               !< flag for prognostic updraft area fraction closure in saSAS
     logical              :: do_mynnedmf       = .false.               !< flag for MYNN-EDMF
     logical              :: do_mynnsfclay     = .false.               !< flag for MYNN Surface Layer Scheme
     ! DH* TODO - move to MYNN namelist section
@@ -3483,7 +3525,11 @@ module GFS_typedefs
 !  max and min lon and lat for critical relative humidity
     integer :: max_lon=5000, max_lat=2000, min_lon=192, min_lat=94
     real(kind=kind_phys) :: rhcmax = 0.9999999               !< max critical rel. hum.
+#ifdef SINGLE_PREC
+    real(kind=kind_phys) :: huge   = 9.9692099683868690E30  !  NetCDF float FillValue
+#else
     real(kind=kind_phys) :: huge   = 9.9692099683868690E36  !  NetCDF float FillValue
+#endif
 
 
 !--- stochastic physics control parameters
@@ -3574,6 +3620,7 @@ module GFS_typedefs
 
     real(kind=kind_phys) :: radar_tten_limits(2) = (/ limit_unspecified, limit_unspecified /)
     integer :: itime
+    integer :: w3kindreal,w3kindint
     
 !--- END NAMELIST VARIABLES
 
@@ -3591,7 +3638,7 @@ module GFS_typedefs
                                f107_kp_skip_size, f107_kp_data_size, f107_kp_read_in_start, &
                                ipe_to_wam_coupling,                                         &
 #else
-                                lsidea,                                                     &
+                               lsidea, use_med_flux,                                        &
 #endif
                           !--- radiation parameters
                                fhswr, fhlwr, levr, nfxr, iaerclm, iflip, isol, ico2, ialb,  &
@@ -3653,7 +3700,7 @@ module GFS_typedefs
                                do_ugwp_v1, do_ugwp_v1_orog_only,  do_ugwp_v1_w_gsldrag,     &
                                var_ric, coef_ric_l, coef_ric_s, hurr_pbl,                   &
                                do_myjsfc, do_myjpbl,                                        &
-                               hwrf_samfdeep, hwrf_samfshal,                                &
+                               hwrf_samfdeep, hwrf_samfshal,progsigma,                      &
                                h2o_phys, pdfcld, shcnvcw, redrag, hybedmf, satmedmf,        &
                                shinhong, do_ysu, dspheat, lheatstrg, lseaspray, cnvcld,     &
                                random_clds, shal_cnv, imfshalcnv, imfdeepcnv, isatmedmf,    &
@@ -3927,6 +3974,7 @@ module GFS_typedefs
     Model%use_cice_alb     = use_cice_alb
     Model%cpl_imp_mrg      = cpl_imp_mrg
     Model%cpl_imp_dbg      = cpl_imp_dbg
+    Model%use_med_flux     = use_med_flux
 
 !--- RRFS Smoke
     Model%rrfs_smoke        = rrfs_smoke
@@ -4009,6 +4057,8 @@ module GFS_typedefs
     Model%iaerclm          = iaerclm
     if (iaer/1000 == 1 .or. Model%iccn == 2) then
       Model%iaerclm = .true.
+      ntrcaer = ntrcaerm
+    else if (iaer/1000 == 2) then
       ntrcaer = ntrcaerm
     else
       ntrcaer = 1
@@ -4324,6 +4374,12 @@ module GFS_typedefs
     end if
     Model%hwrf_samfdeep = hwrf_samfdeep
     Model%hwrf_samfshal = hwrf_samfshal
+
+    if (progsigma .and. imfdeepcnv/=2) then
+       write(*,*) 'Logic error: progsigma requires imfdeepcnv=2'
+       stop
+    end if
+    Model%progsigma = progsigma
 
     if (oz_phys .and. oz_phys_2015) then
        write(*,*) 'Logic error: can only use one ozone physics option (oz_phys or oz_phys_2015), not both. Exiting.'
@@ -4660,6 +4716,7 @@ module GFS_typedefs
     Model%ntgv             = get_tracer_index(Model%tracer_names, 'graupel_vol',Model%me, Model%master, Model%debug)
     Model%nthv             = get_tracer_index(Model%tracer_names, 'hail_vol',   Model%me, Model%master, Model%debug)
     Model%ntke             = get_tracer_index(Model%tracer_names, 'sgs_tke',    Model%me, Model%master, Model%debug)
+    Model%ntsigma          = get_tracer_index(Model%tracer_names, 'sigmab',     Model%me, Model%master, Model%debug)
     Model%nqrimef          = get_tracer_index(Model%tracer_names, 'q_rimef',    Model%me, Model%master, Model%debug)
     Model%ntwa             = get_tracer_index(Model%tracer_names, 'liq_aero',   Model%me, Model%master, Model%debug)
     Model%ntia             = get_tracer_index(Model%tracer_names, 'ice_aero',   Model%me, Model%master, Model%debug)
@@ -4672,15 +4729,15 @@ module GFS_typedefs
     Model%ntdms            = get_tracer_index(Model%tracer_names, 'dms',        Model%me, Model%master, Model%debug)
     Model%ntmsa            = get_tracer_index(Model%tracer_names, 'msa',        Model%me, Model%master, Model%debug)
     Model%ntpp25           = get_tracer_index(Model%tracer_names, 'pp25',       Model%me, Model%master, Model%debug)
-    Model%ntbc1            = get_tracer_index(Model%tracer_names, 'bc1',        Model%me, Model%master, Model%debug)
-    Model%ntbc2            = get_tracer_index(Model%tracer_names, 'bc2',        Model%me, Model%master, Model%debug)
-    Model%ntoc1            = get_tracer_index(Model%tracer_names, 'oc1',        Model%me, Model%master, Model%debug)
-    Model%ntoc2            = get_tracer_index(Model%tracer_names, 'oc2',        Model%me, Model%master, Model%debug)
-    Model%ntdust1          = get_tracer_index(Model%tracer_names, 'dust1',      Model%me, Model%master, Model%debug)
-    Model%ntdust2          = get_tracer_index(Model%tracer_names, 'dust2',      Model%me, Model%master, Model%debug)
-    Model%ntdust3          = get_tracer_index(Model%tracer_names, 'dust3',      Model%me, Model%master, Model%debug)
-    Model%ntdust4          = get_tracer_index(Model%tracer_names, 'dust4',      Model%me, Model%master, Model%debug)
-    Model%ntdust5          = get_tracer_index(Model%tracer_names, 'dust5',      Model%me, Model%master, Model%debug)
+    Model%ntbcl            = get_tracer_index(Model%tracer_names, 'bc1',        Model%me, Model%master, Model%debug)
+    Model%ntbcb            = get_tracer_index(Model%tracer_names, 'bc2',        Model%me, Model%master, Model%debug)
+    Model%ntocl            = get_tracer_index(Model%tracer_names, 'oc1',        Model%me, Model%master, Model%debug)
+    Model%ntocb            = get_tracer_index(Model%tracer_names, 'oc2',        Model%me, Model%master, Model%debug)
+    Model%ntdu             = get_tracer_index(Model%tracer_names, 'dust1',      Model%me, Model%master, Model%debug)
+    Model%ntdu             = get_tracer_index(Model%tracer_names, 'dust2',      Model%me, Model%master, Model%debug)
+    Model%ntdu             = get_tracer_index(Model%tracer_names, 'dust3',      Model%me, Model%master, Model%debug)
+    Model%ntdu             = get_tracer_index(Model%tracer_names, 'dust4',      Model%me, Model%master, Model%debug)
+    Model%ntdu             = get_tracer_index(Model%tracer_names, 'dust5',      Model%me, Model%master, Model%debug)
     Model%ntss1            = get_tracer_index(Model%tracer_names, 'seas1',      Model%me, Model%master, Model%debug)
     Model%ntss2            = get_tracer_index(Model%tracer_names, 'seas2',      Model%me, Model%master, Model%debug)
     Model%ntss3            = get_tracer_index(Model%tracer_names, 'seas3',      Model%me, Model%master, Model%debug)
@@ -4743,6 +4800,24 @@ module GFS_typedefs
     Model%ndtend = 0
     allocate(Model%dtidx(Model%ntracp100,Model%nprocess))
     Model%dtidx = -99
+
+    if(Model%ntchm>0) then
+      Model%ntdu1 = get_tracer_index(Model%tracer_names, 'dust1', Model%me, Model%master, Model%debug)
+      Model%ntdu2 = get_tracer_index(Model%tracer_names, 'dust2', Model%me, Model%master, Model%debug)
+      Model%ntdu3 = get_tracer_index(Model%tracer_names, 'dust3', Model%me, Model%master, Model%debug)
+      Model%ntdu4 = get_tracer_index(Model%tracer_names, 'dust4', Model%me, Model%master, Model%debug)
+      Model%ntdu5 = get_tracer_index(Model%tracer_names, 'dust5', Model%me, Model%master, Model%debug)
+      Model%ntss1 = get_tracer_index(Model%tracer_names, 'seas1', Model%me, Model%master, Model%debug)
+      Model%ntss2 = get_tracer_index(Model%tracer_names, 'seas2', Model%me, Model%master, Model%debug)
+      Model%ntss3 = get_tracer_index(Model%tracer_names, 'seas3', Model%me, Model%master, Model%debug)
+      Model%ntss4 = get_tracer_index(Model%tracer_names, 'seas4', Model%me, Model%master, Model%debug)
+      Model%ntss5 = get_tracer_index(Model%tracer_names, 'seas5', Model%me, Model%master, Model%debug)
+      Model%ntsu  = get_tracer_index(Model%tracer_names, 'so4',   Model%me, Model%master, Model%debug)
+      Model%ntbcb = get_tracer_index(Model%tracer_names, 'bc1',   Model%me, Model%master, Model%debug)
+      Model%ntbcl = get_tracer_index(Model%tracer_names, 'bc2',   Model%me, Model%master, Model%debug)
+      Model%ntocb = get_tracer_index(Model%tracer_names, 'oc1',   Model%me, Model%master, Model%debug)
+      Model%ntocl = get_tracer_index(Model%tracer_names, 'oc2',   Model%me, Model%master, Model%debug)
+    end if
 
     if(ldiag3d) then
        ! Flags used to turn on or off tracer "causes"
@@ -5087,7 +5162,19 @@ module GFS_typedefs
     Model%cdec             = -9999.
     Model%clstp            = -9999
     rinc(1:5)              = 0
-    call w3difdat(jdat,idat,4,rinc)
+    call w3kind(w3kindreal,w3kindint)
+    if (w3kindreal == 8) then
+       rinc8(1:5) = 0
+       call w3difdat(jdat,idat,4,rinc8)
+       rinc = rinc8
+    else if (w3kindreal == 4) then
+       rinc4(1:5) = 0
+       call w3difdat(jdat,idat,4,rinc4)
+       rinc = rinc4
+    else
+       write(0,*)' FATAL ERROR: Invalid w3kindreal'
+       call abort
+    endif
     Model%phour            = rinc(4)/con_hr
     Model%fhour            = (rinc(4) + Model%dtp)/con_hr
     Model%zhour            = mod(Model%phour,Model%fhzero)
@@ -5891,6 +5978,7 @@ module GFS_typedefs
       print *, ' use_cice_alb      : ', Model%use_cice_alb
       print *, ' cpl_imp_mrg       : ', Model%cpl_imp_mrg
       print *, ' cpl_imp_dbg       : ', Model%cpl_imp_dbg
+      print *, ' use_med_flux      : ', Model%use_med_flux
       if(model%rrfs_smoke) then
         print *, ' '
         print *, 'smoke parameters'
@@ -6291,6 +6379,7 @@ module GFS_typedefs
       print *, ' ntgv              : ', Model%ntgv
       print *, ' nthv              : ', Model%nthv
       print *, ' ntke              : ', Model%ntke
+      print *, ' ntsigma           : ', Model%ntsigma
       print *, ' nto               : ', Model%nto
       print *, ' nto2              : ', Model%nto2
       print *, ' ntwa              : ', Model%ntwa
@@ -6312,15 +6401,15 @@ module GFS_typedefs
       print *, ' ntdms             : ', Model%ntdms
       print *, ' ntmsa             : ', Model%ntmsa
       print *, ' ntpp25            : ', Model%ntpp25
-      print *, ' ntbc1             : ', Model%ntbc1
-      print *, ' ntbc2             : ', Model%ntbc2
-      print *, ' ntoc1             : ', Model%ntoc1
-      print *, ' ntoc2             : ', Model%ntoc2
-      print *, ' ntdust1           : ', Model%ntdust1
-      print *, ' ntdust2           : ', Model%ntdust2
-      print *, ' ntdust3           : ', Model%ntdust3
-      print *, ' ntdust4           : ', Model%ntdust4
-      print *, ' ntdust5           : ', Model%ntdust5
+      print *, ' ntbcl             : ', Model%ntbc1
+      print *, ' ntbcb             : ', Model%ntbc2
+      print *, ' ntocl             : ', Model%ntoc1
+      print *, ' ntocb             : ', Model%ntoc2
+      print *, ' ntdu              : ', Model%ntdust1
+      print *, ' ntdu              : ', Model%ntdust2
+      print *, ' ntdu              : ', Model%ntdust3
+      print *, ' ntdu              : ', Model%ntdust4
+      print *, ' ntdu              : ', Model%ntdust5
       print *, ' ntss1             : ', Model%ntss1
       print *, ' ntss2             : ', Model%ntss2
       print *, ' ntss3             : ', Model%ntss3
@@ -6589,6 +6678,11 @@ module GFS_typedefs
     allocate (Tbd%hpbl (IM))
     Tbd%hpbl     = clear_val
 
+    if (Model%imfdeepcnv == Model%imfdeepcnv_gf .or. Model%imfdeepcnv == Model%imfdeepcnv_ntiedtke .or. Model%imfdeepcnv == Model%imfdeepcnv_samf .or. Model%imfshalcnv == Model%imfshalcnv_samf) then
+       allocate(Tbd%prevsq(IM, Model%levs))
+       Tbd%prevsq = clear_val
+    endif
+
     if (Model%imfdeepcnv .ge. 0 .or. Model%imfshalcnv .ge. 0) then
        allocate(Tbd%ud_mf(IM, Model%levs))
        Tbd%ud_mf = zero
@@ -6598,11 +6692,9 @@ module GFS_typedefs
        allocate(Tbd%forcet(IM, Model%levs))
        allocate(Tbd%forceq(IM, Model%levs))
        allocate(Tbd%prevst(IM, Model%levs))
-       allocate(Tbd%prevsq(IM, Model%levs))
        Tbd%forcet = clear_val
        Tbd%forceq = clear_val
        Tbd%prevst = clear_val
-       Tbd%prevsq = clear_val
     end if
 
     if (Model%imfdeepcnv == Model%imfdeepcnv_gf) then

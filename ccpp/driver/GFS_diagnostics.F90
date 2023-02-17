@@ -4173,6 +4173,7 @@ module GFS_diagnostics
 
   endif
 
+!--- prognostic variable tendencies (t, u, v, sph, clwmr, o3)
 !rab    idx = idx + 1
 !rab    ExtDiag(idx)%axes = 3
 !rab    ExtDiag(idx)%name = 'dtemp_dt'

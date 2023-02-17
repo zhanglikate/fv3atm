@@ -1,8 +1,3 @@
-#define EMI_DATA
-#define EMI2_DATA
-#define FENGSHA_DUST_DATA
-#define FENGSHA_DUST_DATA_INFO
-#define FIRE_OPT_GBBEPx
 module FV3GFS_io_mod
 
 !-----------------------------------------------------------------------
@@ -66,11 +61,11 @@ module FV3GFS_io_mod
   character(len=32)  :: fn_srf    = 'sfc_data.nc'
   character(len=32)  :: fn_phy    = 'phy_data.nc'
   character(len=32)  :: fn_dust12m= 'dust12m_data.nc'
-  character(len=32)  :: fn_dust   = 'dust_data.nc'
   character(len=32)  :: fn_emi    = 'emi_data.nc'
+  character(len=32)  :: fn_gbbepx = 'SMOKE_GBBEPx_data.nc'
+  character(len=32)  :: fn_dust   = 'dust_data.nc'
   character(len=32)  :: fn_emi2   = 'emi2_data.nc'
-  character(len=32)  :: fn_gbbepx = 'FIRE_GBBEPx_data.nc'
-
+  character(len=32)  :: fn_gbbepxv3 = 'FIRE_GBBEPx_data.nc'
   !--- GFDL FMS netcdf restart data types defined in fms2_io
   type(FmsNetcdfDomainFile_t) :: Oro_restart, Sfc_restart, Phy_restart, dust12m_restart, dust_restart, emi_restart, emi2_restart, gbbepx_restart
   type(FmsNetcdfDomainFile_t) :: Oro_ls_restart, Oro_ss_restart
@@ -82,7 +77,6 @@ module FV3GFS_io_mod
   real(kind=kind_phys), allocatable, target, dimension(:,:,:)   :: oro_ls_var, oro_ss_var
   real(kind=kind_phys), allocatable, target, dimension(:,:,:,:) :: sfc_var3, phy_var3
   character(len=32),    allocatable,         dimension(:)       :: dust12m_name, dust_name, emi_name, emi2_name, gbbepx_name
-! real(kind=kind_phys), allocatable, target, dimension(:,:,:,:) :: gbbepx_var
   real(kind=kind_phys), allocatable, target, dimension(:,:,:,:) :: dust12m_var
   real(kind=kind_phys), allocatable, target, dimension(:,:,:)   :: dust_var, emi_var, gbbepx_var
   real(kind=kind_phys), allocatable, target, dimension(:,:,:,:) :: emi2_var
@@ -130,19 +124,20 @@ module FV3GFS_io_mod
 !--------------------
 ! FV3GFS_restart_read
 !--------------------
-  subroutine FV3GFS_restart_read (GFS_Data, GFS_Restart, Atm_block, Model, fv_domain, warm_start)
+  subroutine FV3GFS_restart_read (GFS_Data, GFS_Restart, Atm_block, Model, fv_domain, warm_start, ignore_rst_cksum)
     type(GFS_data_type),      intent(inout) :: GFS_Data(:)
     type(GFS_restart_type),   intent(inout) :: GFS_Restart
     type(block_control_type), intent(in)    :: Atm_block
     type(GFS_control_type),   intent(inout) :: Model
     type(domain2d),           intent(in)    :: fv_domain
     logical,                  intent(in)    :: warm_start
+    logical,                  intent(in)    :: ignore_rst_cksum
 
     !--- read in surface data from chgres
-    call sfc_prop_restart_read (GFS_Data%Sfcprop, Atm_block, Model, fv_domain, warm_start)
+    call sfc_prop_restart_read (GFS_Data%Sfcprop, Atm_block, Model, fv_domain, warm_start, ignore_rst_cksum)
 
     !--- read in physics restart data
-    call phys_restart_read (GFS_Restart, Atm_block, Model, fv_domain)
+    call phys_restart_read (GFS_Restart, Atm_block, Model, fv_domain, ignore_rst_cksum)
 
   end subroutine FV3GFS_restart_read
 
@@ -516,13 +511,14 @@ module FV3GFS_io_mod
 !    opens:  oro_data.tile?.nc, sfc_data.tile?.nc
 !
 !----------------------------------------------------------------------
-  subroutine sfc_prop_restart_read (Sfcprop, Atm_block, Model, fv_domain, warm_start)
+  subroutine sfc_prop_restart_read (Sfcprop, Atm_block, Model, fv_domain, warm_start, ignore_rst_cksum)
     !--- interface variable definitions
     type(GFS_sfcprop_type),    intent(inout) :: Sfcprop(:)
     type (block_control_type), intent(in)    :: Atm_block
     type(GFS_control_type),    intent(inout) :: Model
     type (domain2d),           intent(in)    :: fv_domain
     logical,                   intent(in)    :: warm_start
+    logical,                   intent(in)    :: ignore_rst_cksum
     !--- local variables
     integer :: i, j, k, ix, lsoil, num, nb, i_start, j_start, i_end, j_end
     integer :: isc, iec, jsc, jec, npz, nx, ny
@@ -545,8 +541,8 @@ module FV3GFS_io_mod
     character(37) :: infile
     !--- fms2_io file open logic
     logical :: amiopen
-    logical :: is_lsoil    
-    
+    logical :: is_lsoil
+
     nvar_o2  = 19
     nvar_oro_ls_ss = 10
     nvar_s2o = 18
@@ -556,10 +552,10 @@ module FV3GFS_io_mod
       nvar_emi     = 1
     else if (Model%cplchp) then
     !-- global fire
-          nvar_dust   = 5
-    nvar_emi    = 10
-    nvar_emi2   = 3
-    nvar_gbbepx = 5
+      nvar_dust   = 5
+      nvar_emi    = 10
+      nvar_emi2   = 3
+      nvar_gbbepx = 5
     else
       nvar_dust12m = 0
       nvar_gbbepx  = 0
@@ -649,7 +645,7 @@ module FV3GFS_io_mod
 
    !--- read the orography restart/data
    call mpp_error(NOTE,'reading topographic/orographic information from INPUT/oro_data.tile*.nc')
-   call read_restart(Oro_restart)
+   call read_restart(Oro_restart, ignore_checksum=ignore_rst_cksum)
    call close_file(Oro_restart)
 
 
@@ -706,7 +702,7 @@ module FV3GFS_io_mod
     !--- deallocate containers and free restart container
     deallocate(oro_name2, oro_var2)
 
-#ifdef FENGSHA_DUST_DATA
+    if (Model%cplchp) then
     !--- Dust input FILE
     !--- open file
     infile=trim(indir)//'/'//trim(fn_dust)
@@ -754,9 +750,7 @@ module FV3GFS_io_mod
     enddo
 
     deallocate(dust_name,dust_var)
-#endif
 
-#ifdef EMI_DATA
     !--- open anthropogenic emission file
     infile=trim(indir)//'/'//trim(fn_emi)
     amiopen=open_file(emi_restart, trim(infile), 'read', domain=fv_domain, is_restart=.true., dont_add_res_to_filename=.true.)
@@ -813,9 +807,7 @@ module FV3GFS_io_mod
 
     !--- deallocate containers and free restart container
     deallocate(emi_name, emi_var)
-#endif
 
-#ifdef EMI2_DATA
     infile=trim(indir)//'/'//trim(fn_emi2)
     amiopen=open_file(emi2_restart, trim(infile), 'read', domain=fv_domain, is_restart=.true., dont_add_res_to_filename=.true.)
     if (.not.amiopen) call mpp_error( FATAL, 'Error with opening file'//trim(infile) )
@@ -862,11 +854,9 @@ module FV3GFS_io_mod
     enddo
 
     deallocate(emi2_name,emi2_var)
-#endif
 
-#ifdef FIRE_OPT_GBBEPx
     !--- open file
-    infile=trim(indir)//'/'//trim(fn_gbbepx)
+    infile=trim(indir)//'/'//trim(fn_gbbepxv3)
     amiopen=open_file(gbbepx_restart, trim(infile), 'read', domain=fv_domain, is_restart=.true., dont_add_res_to_filename=.true.)
     if (.not.amiopen) call mpp_error( FATAL, 'Error with opening file'//trim(infile) )
 
@@ -911,10 +901,9 @@ module FV3GFS_io_mod
     enddo
 
     deallocate(gbbepx_name, gbbepx_var)
-#endif
+    endif !if (Model%cplchp) then
 
 
-#if 0
     if_smoke: if(Model%rrfs_smoke) then  ! for RRFS-Smoke
 
     !--- Dust input FILE
@@ -1059,7 +1048,6 @@ module FV3GFS_io_mod
 
     deallocate(gbbepx_name, gbbepx_var)
     endif if_smoke  ! RRFS_Smoke
-#endif
 
     !--- Modify/read-in additional orographic static fields for GSL drag suite
     if (Model%gwd_opt==3 .or. Model%gwd_opt==33 .or. &
@@ -1112,11 +1100,11 @@ module FV3GFS_io_mod
       !--- read new GSL created orography restart/data
       call mpp_error(NOTE,'reading topographic/orographic information from &
            &INPUT/oro_data_ls.tile*.nc')
-      call read_restart(Oro_ls_restart)
+      call read_restart(Oro_ls_restart, ignore_checksum=ignore_rst_cksum)
       call close_file(Oro_ls_restart)
       call mpp_error(NOTE,'reading topographic/orographic information from &
            &INPUT/oro_data_ss.tile*.nc')
-      call read_restart(Oro_ss_restart)
+      call read_restart(Oro_ss_restart, ignore_checksum=ignore_rst_cksum)
       call close_file(Oro_ss_restart)
 
 
@@ -1346,7 +1334,7 @@ module FV3GFS_io_mod
         call register_axis(Sfc_restart, 'xaxis_1', 'X')
         call register_axis(Sfc_restart, 'yaxis_1', 'Y')
         call register_axis(Sfc_restart, 'zaxis_1', dimension_length=Model%kice)
-        
+
         if (Model%lsm == Model%lsm_noah .or. Model%lsm == Model%lsm_noahmp) then
           call register_axis(Sfc_restart, 'zaxis_2', dimension_length=Model%lsoil)
         else if(Model%lsm == Model%lsm_ruc) then
@@ -1472,7 +1460,7 @@ module FV3GFS_io_mod
           end if
        end if
     enddo
-    
+
     if (Model%lsm == Model%lsm_noahmp) then
        mand = .false.
        do num = nvar_s3+1,nvar_s3+3
@@ -1505,7 +1493,7 @@ module FV3GFS_io_mod
 
     !--- read the surface restart/data
     call mpp_error(NOTE,'reading surface properties data from INPUT/sfc_data.tile*.nc')
-    call read_restart(Sfc_restart)
+    call read_restart(Sfc_restart, ignore_checksum=ignore_rst_cksum)
     call close_file(Sfc_restart)
 
 !   write(0,*)' stype read in min,max=',minval(sfc_var2(:,:,35)),maxval(sfc_var2(:,:,35)),' sfc_name2=',sfc_name2(35)
@@ -2450,11 +2438,11 @@ module FV3GFS_io_mod
       var3_p2 => sfc_var3eq(:,:,:,7)
       call register_restart_field(Sfc_restart, sfc_name3(7), var3_p2, dimensions=(/'xaxis_1', 'yaxis_1', 'zaxis_2', 'Time   '/),&
                                     &is_optional=.not.mand)
- 
+
       var3_p3 => sfc_var3zn(:,:,:,8)
       call register_restart_field(Sfc_restart, sfc_name3(8), var3_p3, dimensions=(/'xaxis_1', 'yaxis_1', 'zaxis_4', 'Time   '/),&
                                  &is_optional=.not.mand)
-      
+
       nullify(var3_p1)
       nullify(var3_p2)
       nullify(var3_p3)
@@ -2660,12 +2648,13 @@ module FV3GFS_io_mod
 !    opens:  phys_data.tile?.nc
 !
 !----------------------------------------------------------------------
-  subroutine phys_restart_read (GFS_Restart, Atm_block, Model, fv_domain)
+  subroutine phys_restart_read (GFS_Restart, Atm_block, Model, fv_domain, ignore_rst_cksum)
     !--- interface variable definitions
     type(GFS_restart_type),      intent(in) :: GFS_Restart
     type(block_control_type),    intent(in) :: Atm_block
     type(GFS_control_type),      intent(in) :: Model
     type(domain2d),              intent(in) :: fv_domain
+    logical,                     intent(in) :: ignore_rst_cksum
     !--- local variables
     integer :: i, j, k, nb, ix, num
     integer :: isc, iec, jsc, jec, npz, nx, ny
@@ -2726,7 +2715,7 @@ module FV3GFS_io_mod
 
     !--- read the surface restart/data
     call mpp_error(NOTE,'reading physics restart data from INPUT/phy_data.tile*.nc')
-    call read_restart(Phy_restart)
+    call read_restart(Phy_restart, ignore_checksum=ignore_rst_cksum)
     call close_file(Phy_restart)
 
     !--- place the data into the block GFS containers
@@ -3044,10 +3033,17 @@ module FV3GFS_io_mod
     integer :: i, j, k, idx, nblks, nb, ix, ii, jj
     integer :: is_in, js_in, isc, jsc
     character(len=2) :: xtra
+#ifdef CCPP_32BIT
+    real, dimension(nx*ny)      :: var2p
+    real, dimension(nx*ny,levs) :: var3p
+    real, dimension(nx,ny)      :: var2
+    real, dimension(nx,ny,levs) :: var3
+#else
     real(kind=kind_phys), dimension(nx*ny)      :: var2p
     real(kind=kind_phys), dimension(nx*ny,levs) :: var3p
     real(kind=kind_phys), dimension(nx,ny)      :: var2
     real(kind=kind_phys), dimension(nx,ny,levs) :: var3
+#endif
     real(kind=kind_phys) :: rdt, rtime_int, rtime_intfull, lcnvfac
     real(kind=kind_phys) :: rtime_radsw, rtime_radlw
     logical :: used
@@ -3287,7 +3283,11 @@ module FV3GFS_io_mod
   subroutine store_data(id, work, Time, idx, intpl_method, fldname)
     integer, intent(in)                 :: id
     integer, intent(in)                 :: idx
+#ifdef CCPP_32BIT
+    real, intent(in)                    :: work(:,:)
+#else
     real(kind=kind_phys), intent(in)    :: work(ieco-isco+1,jeco-jsco+1)
+#endif
     type(time_type), intent(in)         :: Time
     character(*), intent(in)            :: intpl_method
     character(*), intent(in)            :: fldname
@@ -3367,7 +3367,11 @@ module FV3GFS_io_mod
   subroutine store_data3D(id, work, Time, idx, intpl_method, fldname)
     integer, intent(in)                 :: id
     integer, intent(in)                 :: idx
+#ifdef CCPP_32BIT
+    real, intent(in)                    :: work(:,:,:)
+#else
     real(kind=kind_phys), intent(in)    :: work(ieco-isco+1,jeco-jsco+1,levo)
+#endif
     type(time_type), intent(in)         :: Time
     character(*), intent(in)            :: intpl_method
     character(*), intent(in)            :: fldname

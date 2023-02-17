@@ -214,9 +214,9 @@ SCHEME_FILES = [
     # HAFS FER_HIRES
     'physics/physics/mp_fer_hires.F90',
     # SMOKE
-    'physics/physics/smoke/rrfs_smoke_wrapper.F90',
-    'physics/physics/smoke/rrfs_smoke_postpbl.F90',
-    'physics/physics/smoke/rrfs_smoke_lsdep_wrapper.F90',
+    'physics/smoke/rrfs_smoke_wrapper.F90',
+    'physics/smoke/rrfs_smoke_postpbl.F90',
+    'physics/smoke/rrfs_smoke_lsdep_wrapper.F90',
     # RRTMGP
     'physics/physics/rrtmgp_lw_gas_optics.F90',
     'physics/physics/rrtmgp_lw_cloud_optics.F90',
@@ -276,7 +276,8 @@ SUITES_DIR = 'suites'
 
 # Directory where to write static API to
 STATIC_API_DIR = '{build_dir}/physics'
-STATIC_API_SRCFILE = '{build_dir}/physics/CCPP_STATIC_API.sh'
+STATIC_API_CMAKEFILE = '{build_dir}/physics/CCPP_STATIC_API.cmake'
+STATIC_API_SOURCEFILE = '{build_dir}/physics/CCPP_STATIC_API.sh'
 
 # Directory for writing HTML pages generated from metadata files
 # used by metadata2html.py for generating scientific documentation
