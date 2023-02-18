@@ -595,7 +595,6 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: dqdt_qmicro(:,:) => null()  !< instantanious microphysics tendency to be passed from MP to convection
    !-- chemistry coupling
     real (kind=kind_phys), pointer :: buffer_ebu (:,:,:,:)   => null()  !<
-    real (kind=kind_phys), pointer :: faersw_cpl(:,:,:,:)    => null()  !<
     !--- instantaneous total moisture tendency for smoke coupling:
     real (kind=kind_phys), pointer :: dqdti   (:,:)   => null()  !< rrfs_smoke=true only; instantaneous total moisture tendency (kg/kg/s)
 
@@ -1328,7 +1327,6 @@ module GFS_typedefs
     integer              :: ntwa            !< tracer index for water friendly aerosol
     integer              :: ntia            !< tracer index for ice friendly aerosol
     integer              :: ntso2           !< tracer index for so2
-    integer              :: ntsulf          !< tracer index for sulf
     integer              :: ntdms           !< tracer index for DMS
     integer              :: ntmsa           !< tracer index for msa
     integer              :: ntpp25          !< tracer index for pp25
@@ -2846,9 +2844,7 @@ module GFS_typedefs
       !-- chemistry coupling buffer
       allocate (Coupling%buffer_ebu  (IM,Model%levs+1,1,7))
       !-- chemistry coupling feedback to radiation
-      allocate (Coupling%faersw_cpl  (IM,Model%levr+LTP,14,3))
       Coupling%buffer_ebu   = clear_val
-      Coupling%faersw_cpl   = clear_val
     endif
 
     ! -- additional coupling options for air quality
@@ -4722,22 +4718,26 @@ module GFS_typedefs
     Model%ntia             = get_tracer_index(Model%tracer_names, 'ice_aero',   Model%me, Model%master, Model%debug)
     Model%ntsmoke          = get_tracer_index(Model%tracer_names, 'smoke',      Model%me, Model%master, Model%debug)
     Model%ntdust           = get_tracer_index(Model%tracer_names, 'dust',       Model%me, Model%master, Model%debug)
-    if(Model%cplchp) then
+
+!--- initialize parameters for atmospheric chemistry tracers
+    call Model%init_chemistry(tracer_types)
+
+    if(Model%cplchp .and. Model%ntchm>0) then
     Model%ntchs            = get_tracer_index(Model%tracer_names, 'so2',        Model%me, Model%master, Model%debug)
     Model%ntso2            = get_tracer_index(Model%tracer_names, 'so2',        Model%me, Model%master, Model%debug)
-    Model%ntsulf           = get_tracer_index(Model%tracer_names, 'sulf',       Model%me, Model%master, Model%debug)
+    Model%ntsu             = get_tracer_index(Model%tracer_names, 'sulf',       Model%me, Model%master, Model%debug)
     Model%ntdms            = get_tracer_index(Model%tracer_names, 'dms',        Model%me, Model%master, Model%debug)
     Model%ntmsa            = get_tracer_index(Model%tracer_names, 'msa',        Model%me, Model%master, Model%debug)
     Model%ntpp25           = get_tracer_index(Model%tracer_names, 'pp25',       Model%me, Model%master, Model%debug)
-    Model%ntbcl            = get_tracer_index(Model%tracer_names, 'bc1',        Model%me, Model%master, Model%debug)
-    Model%ntbcb            = get_tracer_index(Model%tracer_names, 'bc2',        Model%me, Model%master, Model%debug)
-    Model%ntocl            = get_tracer_index(Model%tracer_names, 'oc1',        Model%me, Model%master, Model%debug)
-    Model%ntocb            = get_tracer_index(Model%tracer_names, 'oc2',        Model%me, Model%master, Model%debug)
-    Model%ntdu             = get_tracer_index(Model%tracer_names, 'dust1',      Model%me, Model%master, Model%debug)
-    Model%ntdu             = get_tracer_index(Model%tracer_names, 'dust2',      Model%me, Model%master, Model%debug)
-    Model%ntdu             = get_tracer_index(Model%tracer_names, 'dust3',      Model%me, Model%master, Model%debug)
-    Model%ntdu             = get_tracer_index(Model%tracer_names, 'dust4',      Model%me, Model%master, Model%debug)
-    Model%ntdu             = get_tracer_index(Model%tracer_names, 'dust5',      Model%me, Model%master, Model%debug)
+    Model%ntbcb            = get_tracer_index(Model%tracer_names, 'bc1',        Model%me, Model%master, Model%debug)
+    Model%ntbcl            = get_tracer_index(Model%tracer_names, 'bc2',        Model%me, Model%master, Model%debug)
+    Model%ntocb            = get_tracer_index(Model%tracer_names, 'oc1',        Model%me, Model%master, Model%debug)
+    Model%ntocl            = get_tracer_index(Model%tracer_names, 'oc2',        Model%me, Model%master, Model%debug)
+    Model%ntdu1            = get_tracer_index(Model%tracer_names, 'dust1',      Model%me, Model%master, Model%debug)
+    Model%ntdu2            = get_tracer_index(Model%tracer_names, 'dust2',      Model%me, Model%master, Model%debug)
+    Model%ntdu3            = get_tracer_index(Model%tracer_names, 'dust3',      Model%me, Model%master, Model%debug)
+    Model%ntdu4            = get_tracer_index(Model%tracer_names, 'dust4',      Model%me, Model%master, Model%debug)
+    Model%ntdu5            = get_tracer_index(Model%tracer_names, 'dust5',      Model%me, Model%master, Model%debug)
     Model%ntss1            = get_tracer_index(Model%tracer_names, 'seas1',      Model%me, Model%master, Model%debug)
     Model%ntss2            = get_tracer_index(Model%tracer_names, 'seas2',      Model%me, Model%master, Model%debug)
     Model%ntss3            = get_tracer_index(Model%tracer_names, 'seas3',      Model%me, Model%master, Model%debug)
@@ -4745,9 +4745,6 @@ module GFS_typedefs
     Model%ntss5            = get_tracer_index(Model%tracer_names, 'seas5',      Model%me, Model%master, Model%debug)
     Model%ntpp10           = get_tracer_index(Model%tracer_names, 'pp10',       Model%me, Model%master, Model%debug)
     endif ! cplchp tracers
-
-!--- initialize parameters for atmospheric chemistry tracers
-    call Model%init_chemistry(tracer_types)
 
 !--- setup aerosol scavenging factors
     call Model%init_scavenging(fscav_aero)
@@ -4801,7 +4798,7 @@ module GFS_typedefs
     allocate(Model%dtidx(Model%ntracp100,Model%nprocess))
     Model%dtidx = -99
 
-    if(Model%ntchm>0) then
+    if(Model%cplchm .and. Model%ntchm>0) then
       Model%ntdu1 = get_tracer_index(Model%tracer_names, 'dust1', Model%me, Model%master, Model%debug)
       Model%ntdu2 = get_tracer_index(Model%tracer_names, 'dust2', Model%me, Model%master, Model%debug)
       Model%ntdu3 = get_tracer_index(Model%tracer_names, 'dust3', Model%me, Model%master, Model%debug)
@@ -6395,21 +6392,21 @@ module GFS_typedefs
       print *, ' ndchs             : ', Model%ndchs
       print *, ' ndche             : ', Model%ndche
       print *, ' fscav             : ', Model%fscav
-      if(Model%cplchp) then
+      if(Model%cplchp .and. Model%ntchm>0) then
       print *, ' ntso2             : ', Model%ntso2
-      print *, ' ntsulf            : ', Model%ntsulf
+      print *, ' ntsu              : ', Model%ntsu
       print *, ' ntdms             : ', Model%ntdms
       print *, ' ntmsa             : ', Model%ntmsa
       print *, ' ntpp25            : ', Model%ntpp25
-      print *, ' ntbcl             : ', Model%ntbc1
-      print *, ' ntbcb             : ', Model%ntbc2
-      print *, ' ntocl             : ', Model%ntoc1
-      print *, ' ntocb             : ', Model%ntoc2
-      print *, ' ntdu              : ', Model%ntdust1
-      print *, ' ntdu              : ', Model%ntdust2
-      print *, ' ntdu              : ', Model%ntdust3
-      print *, ' ntdu              : ', Model%ntdust4
-      print *, ' ntdu              : ', Model%ntdust5
+      print *, ' ntbcl             : ', Model%ntbcl
+      print *, ' ntbcb             : ', Model%ntbcb
+      print *, ' ntocl             : ', Model%ntocl
+      print *, ' ntocb             : ', Model%ntocb
+      print *, ' ntdu1             : ', Model%ntdu1
+      print *, ' ntdu2             : ', Model%ntdu2
+      print *, ' ntdu3             : ', Model%ntdu3
+      print *, ' ntdu4             : ', Model%ntdu4
+      print *, ' ntdu5             : ', Model%ntdu5
       print *, ' ntss1             : ', Model%ntss1
       print *, ' ntss2             : ', Model%ntss2
       print *, ' ntss3             : ', Model%ntss3

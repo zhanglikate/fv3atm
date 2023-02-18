@@ -77,8 +77,8 @@ module FV3GFS_io_mod
   real(kind=kind_phys), allocatable, target, dimension(:,:,:)   :: oro_ls_var, oro_ss_var
   real(kind=kind_phys), allocatable, target, dimension(:,:,:,:) :: sfc_var3, phy_var3
   character(len=32),    allocatable,         dimension(:)       :: dust12m_name, dust_name, emi_name, emi2_name, gbbepx_name
-  real(kind=kind_phys), allocatable, target, dimension(:,:,:,:) :: dust12m_var
-  real(kind=kind_phys), allocatable, target, dimension(:,:,:)   :: dust_var, emi_var, gbbepx_var
+  real(kind=kind_phys), allocatable, target, dimension(:,:,:,:) :: dust12m_var,gbbepx_var
+  real(kind=kind_phys), allocatable, target, dimension(:,:,:)   :: dust_var, emi_var, gbbepx_varv3
   real(kind=kind_phys), allocatable, target, dimension(:,:,:,:) :: emi2_var
   !--- Noah MP restart containers
   real(kind=kind_phys), allocatable, target, dimension(:,:,:,:) :: sfc_var3sn,sfc_var3eq,sfc_var3zn
@@ -863,7 +863,7 @@ module FV3GFS_io_mod
     if (.not. allocated(gbbepx_name)) then
       !--- allocate the various containers needed for gbbepx fire data
       allocate(gbbepx_name(nvar_gbbepx))
-      allocate(gbbepx_var(nx,ny,nvar_gbbepx))
+      allocate(gbbepx_varv3(nx,ny,nvar_gbbepx))
 
       gbbepx_name(1)  = 'ebu_bc'
       gbbepx_name(2)  = 'ebu_oc'
@@ -875,7 +875,7 @@ module FV3GFS_io_mod
       call register_axis( gbbepx_restart, "lat", 'Y' )
       !--- register the 2D fields
       do num = 1,nvar_gbbepx
-        var2_p => gbbepx_var(:,:,num)
+        var2_p => gbbepx_varv3(:,:,num)
         call register_restart_field(gbbepx_restart, gbbepx_name(num), var2_p, dimensions=(/'lat ', 'lon '/))
       enddo
       nullify(var2_p)
@@ -892,15 +892,15 @@ module FV3GFS_io_mod
         i = Atm_block%index(nb)%ii(ix) - isc + 1
         j = Atm_block%index(nb)%jj(ix) - jsc + 1
         !--- assign hprime(1:10) and hprime(15:24) with new oro stat data
-        Sfcprop(nb)%fire_GBBEPx(ix,1)  = gbbepx_var(i,j,1)
-        Sfcprop(nb)%fire_GBBEPx(ix,2)  = gbbepx_var(i,j,2)
-        Sfcprop(nb)%fire_GBBEPx(ix,3)  = gbbepx_var(i,j,3)
-        Sfcprop(nb)%fire_GBBEPx(ix,4)  = gbbepx_var(i,j,4)
-        Sfcprop(nb)%fire_GBBEPx(ix,5)  = gbbepx_var(i,j,5)
+        Sfcprop(nb)%fire_GBBEPx(ix,1)  = gbbepx_varv3(i,j,1)
+        Sfcprop(nb)%fire_GBBEPx(ix,2)  = gbbepx_varv3(i,j,2)
+        Sfcprop(nb)%fire_GBBEPx(ix,3)  = gbbepx_varv3(i,j,3)
+        Sfcprop(nb)%fire_GBBEPx(ix,4)  = gbbepx_varv3(i,j,4)
+        Sfcprop(nb)%fire_GBBEPx(ix,5)  = gbbepx_varv3(i,j,5)
       enddo
     enddo
 
-    deallocate(gbbepx_name, gbbepx_var)
+    deallocate(gbbepx_name, gbbepx_varv3)
     endif !if (Model%cplchp) then
 
 
