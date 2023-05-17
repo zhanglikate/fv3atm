@@ -236,17 +236,17 @@ SCHEME_FILES = [
     'physics/physics/GFS_rrtmgp_cloud_overlap.F90',
     'physics/physics/GFS_rrtmgp_sw_post.F90',
     # Chemistry
-    '../../UFS-Chem/drivers/ccpp/gsd_chem_seas_wrapper.F90',
-    '../../UFS-Chem/drivers/ccpp/gsd_chem_dust_wrapper.F90',
-    '../../UFS-Chem/drivers/ccpp/gsd_chem_anthropogenic_wrapper.F90',
-    '../../UFS-Chem/drivers/ccpp/gsd_chem_plume_wrapper.F90',
-    '../../UFS-Chem/drivers/ccpp/gsd_chem_dmsemis_wrapper.F90',
-    '../../UFS-Chem/drivers/ccpp/gsd_chem_gocart_wrapper.F90',
-    '../../UFS-Chem/drivers/ccpp/gsd_chem_rad_wrapper.F90',
-    '../../UFS-Chem/drivers/ccpp/gsd_chem_drydep_wrapper.F90',
-    '../../UFS-Chem/drivers/ccpp/gsd_chem_lsdep_wrapper.F90',
-    '../../UFS-Chem/drivers/ccpp/gsd_chem_settling_wrapper.F90',
-    '../../UFS-Chem/drivers/ccpp/gsd_chem_diag_wrapper.F90'
+    '../../CATChem/drivers/ccpp/gsd_chem_seas_wrapper.F90',
+    '../../CATChem/drivers/ccpp/gsd_chem_dust_wrapper.F90',
+    '../../CATChem/drivers/ccpp/gsd_chem_anthropogenic_wrapper.F90',
+    '../../CATChem/drivers/ccpp/gsd_chem_plume_wrapper.F90',
+    '../../CATChem/drivers/ccpp/gsd_chem_dmsemis_wrapper.F90',
+    '../../CATChem/drivers/ccpp/gsd_chem_gocart_wrapper.F90',
+    '../../CATChem/drivers/ccpp/gsd_chem_rad_wrapper.F90',
+    '../../CATChem/drivers/ccpp/gsd_chem_drydep_wrapper.F90',
+    '../../CATChem/drivers/ccpp/gsd_chem_lsdep_wrapper.F90',
+    '../../CATChem/drivers/ccpp/gsd_chem_settling_wrapper.F90',
+    '../../CATChem/drivers/ccpp/gsd_chem_diag_wrapper.F90'
     ]
 
 # Default build dir, relative to current working directory,
