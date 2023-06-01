@@ -233,7 +233,7 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: emi_in_cplchp (:,:) => null()  !< anthropogenic background input
     real (kind=kind_phys), pointer :: emi2_in(:,:,:)   => null()  !< anthropogenic background 3D input
     real (kind=kind_phys), pointer :: fire_MODIS (:,:) => null()  !< anthropogenic fire MODIS input
-    real (kind=kind_phys), pointer :: fire_GBBEPx(:,:) => null()  !< anthropogenic fire GBBEPx input
+    real (kind=kind_phys), pointer :: fire_GBBEPx(:,:,:) => null()  !< anthropogenic fire GBBEPx input
     real (kind=kind_phys), pointer :: dust12m_in  (:,:,:) => null()  !< fengsha dust input
     real (kind=kind_phys), pointer :: emi_in (:,:) => null()  !< anthropogenic background input
     real (kind=kind_phys), pointer :: smoke_GBBEPx(:,:,:) => null()  !< GBBEPx fire input
@@ -2174,7 +2174,7 @@ module GFS_typedefs
     allocate (Sfcprop%dust_in  (IM,5))
     allocate (Sfcprop%emi2_in  (IM,Model%levs,3))
     allocate (Sfcprop%fire_MODIS  (IM,13))
-    allocate (Sfcprop%fire_GBBEPx (IM,5))
+    allocate (Sfcprop%fire_GBBEPx (IM,5,35))
 
     allocate(Sfcprop%albdirvis_lnd (IM))
     allocate(Sfcprop%albdirnir_lnd (IM))
@@ -3572,7 +3572,7 @@ module GFS_typedefs
     real(kind=kind_phys) :: dust_gamma = 1.0
     integer              :: dust_calcdrag = 1
     integer              :: emiss_inpt_opt = 1
-    integer              :: emiss_opt = 5
+    integer              :: emiss_opt = 1
     integer              :: gas_bc_opt = 1
     integer              :: gas_ic_opt = 1
     integer              :: gaschem_onoff = 1
