@@ -597,6 +597,7 @@ module post_fv3
       dtp         = wrt_int_state%dtp
       iSF_SURFACE_PHYSICS = 2
       spval = 9.99e20
+      TV=spval
 !
 ! nems gfs has zhour defined
       tprec   = float(wrt_int_state%fhzero)
@@ -3824,7 +3825,7 @@ module post_fv3
         do j=jsta,jend
           do i=ista,iend
 
-              TV = T(I,J,L) * (H1+D608*MAX(Q(I,J,L),QMIN))
+              TV = MAX(T(I,J,L),QMIN) * (H1 + D608*MAX(Q(I,J,L),QMIN))
               RHOMID(I,J,L) = PMID(I,J,L) / (RD*TV)
 
             dustcb(i,j) = MAX(dustcb(i,j), 0.0)

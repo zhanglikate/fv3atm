@@ -4095,7 +4095,8 @@ module GFS_diagnostics
       ExtDiag(idx)%axes = 2
       ExtDiag(idx)%unit = 'kg/m2/s'
       ExtDiag(idx)%mod_name = 'gfs_phys'
-     else if (num == 7) then
+     else if (num >= 7 .and. Model%aer_ra_feedback > 0) then
+     if (num == 7) then
       ExtDiag(idx)%name = 'maod'
       ExtDiag(idx)%desc = 'MIE AOD'
       ExtDiag(idx)%axes = 2
@@ -4131,6 +4132,7 @@ module GFS_diagnostics
       ExtDiag(idx)%axes = 2
       ExtDiag(idx)%unit = ' '
       ExtDiag(idx)%mod_name = 'gfs_phys'
+     endif !(num >= 7 .and. Model%aer_ra_feedback > 0) then
      endif !num < 12
 
       allocate (ExtDiag(idx)%data(nblks))

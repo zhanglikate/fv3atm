@@ -229,7 +229,7 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: weasdi (:)   => null()  !< weasd over ice
     real (kind=kind_phys), pointer :: hprime (:,:) => null()  !< orographic metrics
     ! Chemistry
-    real (kind=kind_phys), pointer :: dust_in(:,:)     => null()  !< fengsha dust input
+    real (kind=kind_phys), pointer :: dust_in(:,:,:)     => null()  !< fengsha dust input
     real (kind=kind_phys), pointer :: emi_in_cplchp (:,:) => null()  !< anthropogenic background input
     real (kind=kind_phys), pointer :: emi2_in(:,:,:)   => null()  !< anthropogenic background 3D input
     real (kind=kind_phys), pointer :: fire_MODIS (:,:) => null()  !< anthropogenic fire MODIS input
@@ -2171,7 +2171,7 @@ module GFS_typedefs
     allocate (Sfcprop%emi_in   (IM,1))
 
     allocate (Sfcprop%emi_in_cplchp   (IM,10))
-    allocate (Sfcprop%dust_in  (IM,5))
+    allocate (Sfcprop%dust_in  (IM,12,5))
     allocate (Sfcprop%emi2_in  (IM,Model%levs,3))
     allocate (Sfcprop%fire_MODIS  (IM,13))
     allocate (Sfcprop%fire_GBBEPx (IM,5,35))

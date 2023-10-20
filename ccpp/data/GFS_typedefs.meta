@@ -757,7 +757,7 @@
   standard_name = fengsha_dust_input
   long_name = fengsha dust input
   units = various
-  dimensions = (horizontal_loop_extent,5)
+  dimensions = (horizontal_loop_extent,12,5)
   type = real
   kind = kind_phys
   active = (flag_for_chemistry_package_coupling)
@@ -2472,7 +2472,7 @@
   dimensions = (horizontal_dimension)
   type = real
   kind = kind_phys
-  active = (flag_for_cellular_automata)
+  active = (flag_for_sgs_cellular_automata_in_chemical_tracer_emissions)
 [ca_emis_anthro]
   standard_name = fraction_of_cellular_automata_for_anthropogenic_emissions
   long_name = fraction of cellular automata for anthropogenic emissions
@@ -2480,7 +2480,7 @@
   dimensions = (horizontal_dimension)
   type = real
   kind = kind_phys
-  active = (flag_for_cellular_automata)
+  active = (flag_for_sgs_cellular_automata_in_chemical_tracer_emissions)
 [ca_emis_dust]
   standard_name = fraction_of_cellular_automata_for_dust_emissions
   long_name = fraction of cellular automata for dust emissions
@@ -2488,7 +2488,7 @@
   dimensions = (horizontal_dimension)
   type = real
   kind = kind_phys
-  active = (flag_for_cellular_automata)
+  active = (flag_for_sgs_cellular_automata_in_chemical_tracer_emissions)
 [ca_emis_plume]
   standard_name = fraction_of_cellular_automata_for_plume_rise_emissions
   long_name = fraction of cellular automata for plume rise emissions
@@ -2496,7 +2496,7 @@
   dimensions = (horizontal_dimension)
   type = real
   kind = kind_phys
-  active = (flag_for_cellular_automata)
+  active = (flag_for_sgs_cellular_automata_in_chemical_tracer_emissions)
 [ca_emis_seas]
   standard_name = fraction_of_cellular_automata_for_sea_salt_emissions
   long_name = fraction of cellular automata for sea salt emissions
@@ -2504,7 +2504,7 @@
   dimensions = (horizontal_dimension)
   type = real
   kind = kind_phys
-  active = (flag_for_cellular_automata)
+  active = (flag_for_sgs_cellular_automata_in_chemical_tracer_emissions)
 [ca1]
   standard_name = cellular_automata_global_pattern_from_coupled_process
   long_name = cellular automata global pattern
