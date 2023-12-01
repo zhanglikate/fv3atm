@@ -3824,8 +3824,7 @@ module post_fv3
         l=lm
         do j=jsta,jend
           do i=ista,iend
-
-              TV = MAX(T(I,J,L),QMIN) * (H1 + D608*MAX(Q(I,J,L),QMIN))
+              TV = MAX(T(I,J,L) * (H1+D608 * MAX(Q(I,J,L),1e-8)),1e-8)
               RHOMID(I,J,L) = PMID(I,J,L) / (RD*TV)
 
             dustcb(i,j) = MAX(dustcb(i,j), 0.0)
