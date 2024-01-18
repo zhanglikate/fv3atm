@@ -43,7 +43,7 @@ module post_fv3
 !-----------------------------------------------------------------------
 !
       use ctlblk_mod, only : komax,ifhr,ifmin,modelname,datapd,fld_info, &
-                             npset,grib,gocart_on,icount_calmict, jsta,  &
+                             npset,grib,icount_calmict, jsta,            &
                              jend,ista,iend, im, nsoil, filenameflat,numx
       use gridspec_mod, only : maptype, gridtype,latstart,latlast,       &
                                lonstart,lonlast
@@ -481,10 +481,14 @@ module post_fv3
 !-----------------------------------------------------------------------
 !
       use esmf
+      use vrbls4d,     only: dust, SALT, SUSO, SOOT, WASO,no3,nh4, PP25, PP10 
       use vrbls3d,     only: t, q, uh, vh, wh, alpint, dpres, zint, zmid, o3,  &
                              qqr, qqs, cwm, qqi, qqw, qqg, omga, cfr, pmid,    &
                              q2, rlwtt, rswtt, tcucn, tcucns, train, el_pbl,   &
-                             pint, exch_h, ref_10cm, qqni, qqnr, qqnwfa, qqnifa
+                             pint, exch_h, ref_10cm, qqni, qqnr,qqnwfa, qqnifa,&
+                             duwt, duem, dusd, dudp, dusv, ssem, sssd, ssdp,   &
+                             sswt, sssv, bcem, bcsd, bcdp, bcwt, bcsv, ocem,   &
+                             ocsd,ocdp,ocwt,ocsv, rhomid
       use vrbls2d,     only: f, pd, sigt4, fis, pblh, ustar, z0, ths, qs, twbs,&
                              qwbs, avgcprate, cprate, avgprec, prec, lspa, sno,&
                              cldefi, th10, q10, tshltr, pshltr, tshltr, albase,&
@@ -515,17 +519,23 @@ module post_fv3
                              rel_vort_max, rel_vort_maxhy1, refd_max,          &
                              refdm10c_max, u10max, v10max, wspd10max, sfcuxi,  &
                              sfcvxi, t10m, t10avg, psfcavg, akhsavg, akmsavg,  &
-                             albedo, tg, prate_max, pwat
+                             albedo, tg, prate_max, pwat, aod550, du_aod550,   &
+                             ss_aod550, su_aod550, oc_aod550, bc_aod550, maod, &
+                             dustpm10, dustcb, bccb, occb, sulfcb, sscb,       &
+                             dustallcb, ssallcb, dustpm, sspm, pp25cb, pp10cb, &
+                             no3cb, nh4cb, dusmass, ducmass, dusmass25,ducmass25
       use soil,        only: sldpth, sh2o, smc, stc
       use masks,       only: lmv, lmh, htm, vtm, gdlat, gdlon, dx, dy, hbm2, sm, sice
       use ctlblk_mod,  only: im, jm, lm, lp1, jsta, jend, jsta_2l, jend_2u, jsta_m,jend_m, &
-                             ista, iend, ista_2l, iend_2u, ista_m,iend_m, &
+                             ista, iend, ista_2l, iend_2u, ista_m,iend_m,qmin, &
                              lsm, pt, imp_physics, spval, mpi_comm_comp, gdsdegr,  &
                              tprec, tclod, trdlw, trdsw, tsrfc, tmaxmin, theat, &
                              ardlw, ardsw, asrfc, avrain, avcnvc, iSF_SURFACE_PHYSICS,&
                              td3d, idat, sdat, ifhr, ifmin, dt, nphs, dtq2, pt_tbl, &
-                             alsl, spl, ihrst, modelname 
-      use params_mod,  only: erad, dtr, capa, p1000, small
+                             alsl, spl, ihrst, modelname, nbin_ss, nbin_bc, nbin_oc,&
+                             nbin_su, nbin_no3, nbin_nh4, gocart_on, gccpp_on, nasa_on,&
+                             rdaod,d2d_chem, nbin_du
+      use params_mod,  only: erad, dtr, capa, p1000, small, h1, d608, pi, rd, tfrz
       use gridspec_mod,only: latstart, latlast, lonstart, lonlast, cenlon, cenlat, &
                              dxval, dyval, truelat2, truelat1, psmapf, cenlat,     &
                              lonstartv, lonlastv, cenlonv, latstartv, latlastv,    &
@@ -571,7 +581,7 @@ module post_fv3
       real,external::FPVSNEW
       real,dimension(:,:),allocatable :: dummy, p2d, t2d, q2d,  qs2d,  &
                              cw2d, cfr2d
-      character(len=80)              :: fieldname, wrtFBName
+      character(len=80)              :: fieldname, wrtFBName, VarName
       type(ESMF_Grid)                :: wrtGrid
       type(ESMF_Field)               :: theField
       type(ESMF_Field), allocatable  :: fcstField(:)
@@ -587,6 +597,7 @@ module post_fv3
       dtp         = wrt_int_state%dtp
       iSF_SURFACE_PHYSICS = 2
       spval = 9.99e20
+      TV=spval
 !
 ! nems gfs has zhour defined
       tprec   = float(wrt_int_state%fhzero)
@@ -2643,6 +2654,398 @@ module post_fv3
               enddo
             endif
 
+           if(rdaod) then
+            if(trim(fieldname)=='aod550') then
+              !$omp parallel do default(none) private(i,j,l) shared(jsta,jend,ista,iend,spval,aod550,arrayr42d,fillvalue)
+              do j=jsta,jend
+                do i=ista, iend
+                  aod550(i,j) = arrayr42d(i,j)
+                  if( abs(arrayr42d(i,j)-fillValue) < small) aod550(i,j) = spval
+                enddo
+              enddo
+            endif
+   
+            if(trim(fieldname)=='du_aod550') then
+              !$omp parallel do default(none) private(i,j,l) shared(jsta,jend,ista,iend,spval,du_aod550,arrayr42d,fillvalue)
+              do j=jsta,jend
+                do i=ista, iend
+                  du_aod550(i,j) = arrayr42d(i,j)
+                  if( abs(arrayr42d(i,j)-fillValue) < small) du_aod550(i,j) = spval
+                enddo
+              enddo
+            endif
+
+            if(trim(fieldname)=='ss_aod550') then
+              !$omp parallel do default(none) private(i,j,l) shared(jsta,jend,ista,iend,spval,ss_aod550,arrayr42d,fillvalue)
+              do j=jsta,jend
+                do i=ista, iend
+                  ss_aod550(i,j) = arrayr42d(i,j)
+                  if( abs(arrayr42d(i,j)-fillValue) < small) ss_aod550(i,j) = spval
+                enddo
+              enddo
+            endif
+
+            if(trim(fieldname)=='su_aod550') then
+              !$omp parallel do default(none) private(i,j,l) shared(jsta,jend,ista,iend,spval,su_aod550,arrayr42d,fillvalue)
+              do j=jsta,jend
+                do i=ista, iend
+                  su_aod550(i,j) = arrayr42d(i,j)
+                  if( abs(arrayr42d(i,j)-fillValue) < small) su_aod550(i,j) = spval
+                enddo
+              enddo
+            endif
+
+            if(trim(fieldname)=='oc_aod550') then
+              !$omp parallel do default(none) private(i,j,l) shared(jsta,jend,ista,iend,spval,oc_aod550,arrayr42d,fillvalue)
+              do j=jsta,jend
+                do i=ista, iend
+                  oc_aod550(i,j) = arrayr42d(i,j)
+                  if( abs(arrayr42d(i,j)-fillValue) < small) oc_aod550(i,j) = spval
+                enddo
+              enddo
+            endif
+
+            if(trim(fieldname)=='bc_aod550') then
+              !$omp parallel do default(none) private(i,j,l) shared(jsta,jend,ista,iend,spval,bc_aod550,arrayr42d,fillvalue)
+              do j=jsta,jend
+                do i=ista, iend
+                  bc_aod550(i,j) = arrayr42d(i,j)
+                  if( abs(arrayr42d(i,j)-fillValue) < small) bc_aod550(i,j) = spval
+                enddo
+              enddo
+            endif
+           endif !rdaod
+
+           if ((gocart_on .or. gccpp_on) .and. d2d_chem) then
+           do K = 1, nbin_du
+            if ( K == 1) VarName='duem001'
+            if ( K == 2) VarName='duem002'
+            if ( K == 3) VarName='duem003'
+            if ( K == 4) VarName='duem004'
+            if ( K == 5) VarName='duem005'
+ 
+            if(trim(fieldname)==VarName) then
+              !$omp parallel do default(none) private(i,j,K) shared(jsta,jend,ista,iend,spval,duem,arrayr42d,fillvalue)
+              do j=jsta,jend
+                do i=ista, iend
+                  duem(i,j,K) = arrayr42d(i,j)
+                  if( abs(arrayr42d(i,j)-fillValue) < small) duem(i,j,K) = spval
+                enddo
+              enddo
+            endif
+           enddo
+
+           do K = 1, nbin_du
+            if ( K == 1) VarName='dust1sd'
+            if ( K == 2) VarName='dust2sd'
+            if ( K == 3) VarName='dust3sd'
+            if ( K == 4) VarName='dust4sd'
+            if ( K == 5) VarName='dsut5sd'
+
+            if(trim(fieldname)==VarName) then
+              !$omp parallel do default(none) private(i,j,K) shared(jsta,jend,ista,iend,spval,dusd,arrayr42d,fillvalue)
+              do j=jsta,jend
+                do i=ista, iend
+                  dusd(i,j,K) = arrayr42d(i,j)
+                  if( abs(arrayr42d(i,j)-fillValue) < small) dusd(i,j,K) = spval
+                enddo
+              enddo
+            endif
+           enddo
+
+           do K = 1, nbin_du
+            if ( K == 1) VarName='dust1dp'
+            if ( K == 2) VarName='dust2dp'
+            if ( K == 3) VarName='dust3dp'
+            if ( K == 4) VarName='dust4dp'
+            if ( K == 5) VarName='dust5dp'
+
+            if(trim(fieldname)==VarName) then
+              !$omp parallel do default(none) private(i,j,K) shared(jsta,jend,ista,iend,spval,dudp,arrayr42d,fillvalue)
+              do j=jsta,jend
+                do i=ista, iend
+                  dudp(i,j,K) = arrayr42d(i,j)
+                  if( abs(arrayr42d(i,j)-fillValue) < small) dudp(i,j,K) = spval
+                enddo
+              enddo
+            endif
+           enddo
+
+           do K = 1, nbin_du
+            if ( K == 1) VarName='dust1wtl'
+            if ( K == 2) VarName='dust2wtl'
+            if ( K == 3) VarName='dust3wtl'
+            if ( K == 4) VarName='dust4wtl'
+            if ( K == 5) VarName='dust5wtl'
+            if(trim(fieldname)==VarName) then
+              !$omp parallel do default(none) private(i,j,K) shared(jsta,jend,ista,iend,spval,duwt,arrayr42d,fillvalue)
+              do j=jsta,jend
+                do i=ista, iend
+                  duwt(i,j,K) = arrayr42d(i,j)
+                  if( abs(arrayr42d(i,j)-fillValue) < small) duwt(i,j,K) = spval
+                enddo
+              enddo
+            endif
+           enddo
+
+           do K = 1, nbin_du
+            if ( K == 1) VarName='dust1wtc'
+            if ( K == 2) VarName='dust2wtc'
+            if ( K == 3) VarName='dust3wtc'
+            if ( K == 4) VarName='dust4wtc'
+            if ( K == 5) VarName='dust5wtc'
+            if(trim(fieldname)==VarName) then
+              !$omp parallel do default(none) private(i,j,K) shared(jsta,jend,ista,iend,spval,dusv,arrayr42d,fillvalue)
+              do j=jsta,jend
+                do i=ista, iend
+                  dusv(i,j,K) = arrayr42d(i,j)
+                  if( abs(arrayr42d(i,j)-fillValue) < small) dusv(i,j,K) = spval
+                enddo
+              enddo
+            endif
+           enddo
+
+           do K = 1, nbin_ss
+            if ( K == 1) VarName='ssem001'
+            if ( K == 2) VarName='ssem002'
+            if ( K == 3) VarName='ssem003'
+            if ( K == 4) VarName='ssem004'
+            if ( K == 5) VarName='ssem005'
+
+            if(trim(fieldname)==VarName) then
+              !$omp parallel do default(none) private(i,j,K) shared(jsta,jend,ista,iend,spval,ssem,arrayr42d,fillvalue)
+              do j=jsta,jend
+                do i=ista, iend
+                  ssem(i,j,K) = arrayr42d(i,j)
+                  if( abs(arrayr42d(i,j)-fillValue) < small) ssem(i,j,K) = spval
+                enddo
+              enddo
+            endif
+           enddo
+
+           do K = 1, nbin_ss
+            if ( K == 1) VarName='seas1sd'
+            if ( K == 2) VarName='seas2sd'
+            if ( K == 3) VarName='seas3sd'
+            if ( K == 4) VarName='seas4sd'
+            if ( K == 5) VarName='seas5sd'
+
+            if(trim(fieldname)==VarName) then
+              !$omp parallel do default(none) private(i,j,K) shared(jsta,jend,ista,iend,spval,sssd,arrayr42d,fillvalue)
+              do j=jsta,jend
+                do i=ista, iend
+                  sssd(i,j,K) = arrayr42d(i,j)
+                  if( abs(arrayr42d(i,j)-fillValue) < small) sssd(i,j,K) = spval
+                enddo
+              enddo
+            endif
+           enddo
+
+           do K = 1, nbin_ss
+            if ( K == 1) VarName='seas1dp'
+            if ( K == 2) VarName='seas2dp'
+            if ( K == 3) VarName='seas3dp'
+            if ( K == 4) VarName='seas4dp'
+            if ( K == 5) VarName='seas5dp'
+
+            if(trim(fieldname)==VarName) then
+              !$omp parallel do default(none) private(i,j,K) shared(jsta,jend,ista,iend,spval,ssdp,arrayr42d,fillvalue)
+              do j=jsta,jend
+                do i=ista, iend
+                  ssdp(i,j,K) = arrayr42d(i,j)
+                  if( abs(arrayr42d(i,j)-fillValue) < small) ssdp(i,j,K) = spval
+                enddo
+              enddo
+            endif
+           enddo
+
+           do K = 1, nbin_ss
+            if ( K == 1) VarName='seas1wtl'
+            if ( K == 2) VarName='seas2wtl'
+            if ( K == 3) VarName='seas3wtl'
+            if ( K == 4) VarName='seas4wtl'
+            if ( K == 5) VarName='seas5wtl'
+
+            if(trim(fieldname)==VarName) then
+              !$omp parallel do default(none) private(i,j,K) shared(jsta,jend,ista,iend,spval,sswt,arrayr42d,fillvalue)
+              do j=jsta,jend
+                do i=ista, iend
+                  sswt(i,j,K) = arrayr42d(i,j)
+                  if( abs(arrayr42d(i,j)-fillValue) < small) sswt(i,j,K) = spval
+                enddo
+              enddo
+            endif
+           enddo
+
+           do K = 1, nbin_ss
+            if ( K == 1) VarName='seas1wtc'
+            if ( K == 2) VarName='seas1wtc'
+            if ( K == 3) VarName='seas1wtc'
+            if ( K == 4) VarName='seas1wtc'
+            if ( K == 5) VarName='seas1wtc'
+
+            if(trim(fieldname)==VarName) then
+              !$omp parallel do default(none) private(i,j,K) shared(jsta,jend,ista,iend,spval,sssv,arrayr42d,fillvalue)
+              do j=jsta,jend
+                do i=ista, iend
+                  sssv(i,j,K) = arrayr42d(i,j)
+                  if( abs(arrayr42d(i,j)-fillValue) < small) sssv(i,j,K) = spval
+                enddo
+              enddo
+            endif
+           enddo
+
+           do K = 1, nbin_bc
+            if ( K == 1) VarName='bceman'
+            if ( K == 2) VarName='bcembb'
+            if(trim(fieldname)==VarName) then
+              !$omp parallel do default(none) private(i,j,K) shared(jsta,jend,ista,iend,spval,bcem,arrayr42d,fillvalue)
+              do j=jsta,jend
+                do i=ista, iend
+                  bcem(i,j,K) = arrayr42d(i,j)
+                  if( abs(arrayr42d(i,j)-fillValue) < small) bcem(i,j,K) = spval
+                enddo
+              enddo
+            endif
+           enddo
+
+           do K = 1, nbin_bc
+            if ( K == 1) VarName='bc1sd'
+            if ( K == 2) VarName='bc2sd'
+            if(trim(fieldname)==VarName) then
+              !$omp parallel do default(none) private(i,j,K) shared(jsta,jend,ista,iend,spval,bcsd,arrayr42d,fillvalue)
+              do j=jsta,jend
+                do i=ista, iend
+                  bcsd(i,j,K) = arrayr42d(i,j)
+                  if( abs(arrayr42d(i,j)-fillValue) < small) bcsd(i,j,K) = spval
+                enddo
+              enddo
+            endif
+           enddo
+
+           do K = 1, nbin_bc
+            if ( K == 1) VarName='bc1dp'
+            if ( K == 2) VarName='bc2dp'
+            if(trim(fieldname)==VarName) then
+              !$omp parallel do default(none) private(i,j,K) shared(jsta,jend,ista,iend,spval,bcdp,arrayr42d,fillvalue)
+              do j=jsta,jend
+                do i=ista, iend
+                  bcdp(i,j,K) = arrayr42d(i,j)
+                  if( abs(arrayr42d(i,j)-fillValue) < small) bcdp(i,j,K) = spval
+                enddo
+              enddo
+            endif
+           enddo
+
+           do K = 1, nbin_bc
+            if ( K == 1) VarName='bc1wtl'
+            if ( K == 2) VarName='bc2wtl'
+            if(trim(fieldname)==VarName) then
+              !$omp parallel do default(none) private(i,j,K) shared(jsta,jend,ista,iend,spval,bcwt,arrayr42d,fillvalue)
+              do j=jsta,jend
+                do i=ista, iend
+                  bcwt(i,j,K) = arrayr42d(i,j)
+                  if( abs(arrayr42d(i,j)-fillValue) < small) bcwt(i,j,K) = spval
+                enddo
+              enddo
+            endif
+           enddo
+
+           do K = 1, nbin_bc
+            if ( K == 1) VarName='bc1wtc'
+            if ( K == 2) VarName='bc2wtc'
+            if(trim(fieldname)==VarName) then
+              !$omp parallel do default(none) private(i,j,K) shared(jsta,jend,ista,iend,spval,bcsv,arrayr42d,fillvalue)
+              do j=jsta,jend
+                do i=ista, iend
+                  bcsv(i,j,K) = arrayr42d(i,j)
+                  if( abs(arrayr42d(i,j)-fillValue) < small) bcsv(i,j,K) = spval
+                enddo
+              enddo
+            endif
+           enddo
+
+           do K = 1, nbin_oc
+            if ( K == 1) VarName='oceman'
+            if ( K == 2) VarName='ocembb'
+            if(trim(fieldname)==VarName) then
+              !$omp parallel do default(none) private(i,j,K) shared(jsta,jend,ista,iend,spval,ocem,arrayr42d,fillvalue)
+              do j=jsta,jend
+                do i=ista, iend
+                 ocem(i,j,K) = arrayr42d(i,j)
+                  if( abs(arrayr42d(i,j)-fillValue) < small) ocem(i,j,K) = spval
+                enddo
+              enddo
+            endif
+           enddo
+
+           do K = 1, nbin_oc
+            if ( K == 1) VarName='oc1sd'
+            if ( K == 2) VarName='oc2sd'
+            if(trim(fieldname)==VarName) then
+              !$omp parallel do default(none) private(i,j,K) shared(jsta,jend,ista,iend,spval,ocsd,arrayr42d,fillvalue)
+              do j=jsta,jend
+                do i=ista, iend
+                 ocsd(i,j,K) = arrayr42d(i,j)
+                  if( abs(arrayr42d(i,j)-fillValue) < small) ocsd(i,j,K) = spval
+                enddo
+              enddo
+            endif
+           enddo
+
+          do K = 1, nbin_oc
+           if ( K == 1) VarName='oc1dp'
+           if ( K == 2) VarName='oc2dp'
+            if(trim(fieldname)==VarName) then
+              !$omp parallel do default(none) private(i,j,K) shared(jsta,jend,ista,iend,spval,ocdp,arrayr42d,fillvalue)
+              do j=jsta,jend
+                do i=ista, iend
+                 ocdp(i,j,K) = arrayr42d(i,j)
+                  if( abs(arrayr42d(i,j)-fillValue) < small) ocdp(i,j,K) = spval
+                enddo
+              enddo
+            endif
+           enddo
+
+           do K = 1, nbin_oc
+            if ( K == 1) VarName='oc1wtl'
+            if ( K == 2) VarName='oc2wtl'
+            if(trim(fieldname)==VarName) then
+              !$omp parallel do default(none) private(i,j,K) shared(jsta,jend,ista,iend,spval,ocwt,arrayr42d,fillvalue)
+              do j=jsta,jend
+                do i=ista, iend
+                 ocwt(i,j,K) = arrayr42d(i,j)
+                  if( abs(arrayr42d(i,j)-fillValue) < small) ocwt(i,j,K) = spval
+                enddo
+              enddo
+            endif
+           enddo
+
+           do K = 1, nbin_oc
+           if ( K == 1) VarName='oc1wtc'
+           if ( K == 2) VarName='oc2wtc'
+            if(trim(fieldname)==VarName) then
+              !$omp parallel do default(none) private(i,j,K) shared(jsta,jend,ista,iend,spval,ocsv,arrayr42d,fillvalue)
+              do j=jsta,jend
+                do i=ista, iend
+                 ocsv(i,j,K) = arrayr42d(i,j)
+                  if( abs(arrayr42d(i,j)-fillValue) < small) ocsv(i,j,K) = spval
+                enddo
+              enddo
+            endif
+           enddo
+
+            if(trim(fieldname)=='maod') then
+              !$omp parallel do default(none) private(i,j) shared(jsta,jend,ista,iend,spval,maod,arrayr42d,fillvalue)
+              do j=jsta,jend
+                do i=ista, iend
+                 maod(i,j) = arrayr42d(i,j)
+                  if( abs(arrayr42d(i,j)-fillValue) < small) maod(i,j) = spval
+                enddo
+              enddo
+            endif
+
+           endif ! gocart_on, d2d_chem
 
 !          else if (fieldDimCount > gridDimCount) then
           else if (fieldDimCount ==3) then
@@ -3020,7 +3423,469 @@ module post_fv3
               enddo
             endif
             endif
+
           
+! read chemical fields
+      if(gocart_on .or. gccpp_on .or. nasa_on) then
+  
+        if(trim(fieldname)=='dust1') then
+          !$omp parallel do default(none) private(i,j,l) shared(lm,jsta,jend,ista,iend,dust,arrayr43d,fillvalue,spval)
+          do l=1,lm
+            do j=jsta,jend
+              do i=ista, iend
+                dust(i,j,l,1) = max(arrayr43d(i,j,l),0.0)
+                if(abs(arrayr43d(i,j,l)-fillvalue) < small) dust(i,j,l,1) = spval
+              enddo
+            enddo
+          enddo
+        endif
+
+        if(trim(fieldname)=='dust2') then
+          !$omp parallel do default(none) private(i,j,l) shared(lm,jsta,jend,ista,iend,dust,arrayr43d,fillvalue,spval)
+          do l=1,lm
+            do j=jsta,jend
+              do i=ista, iend
+                dust(i,j,l,2) = max(arrayr43d(i,j,l),0.0)
+                if(abs(arrayr43d(i,j,l)-fillvalue) < small) dust(i,j,l,2) = spval
+              enddo
+            enddo
+          enddo
+        endif
+
+        if(trim(fieldname)=='dust3') then
+          !$omp parallel do default(none) private(i,j,l) shared(lm,jsta,jend,ista,iend,dust,arrayr43d,fillvalue,spval)
+          do l=1,lm
+            do j=jsta,jend
+              do i=ista, iend
+                dust(i,j,l,3) = max(arrayr43d(i,j,l), 0.0)
+                if(abs(arrayr43d(i,j,l)-fillvalue) < small) dust(i,j,l,3) = spval
+              enddo
+            enddo
+          enddo
+        endif
+
+        if(trim(fieldname)=='dust4') then
+          !$omp parallel do default(none) private(i,j,l) shared(lm,jsta,jend,ista,iend,dust,arrayr43d,fillvalue,spval)
+          do l=1,lm
+            do j=jsta,jend
+              do i=ista, iend
+                dust(i,j,l,4) = max(arrayr43d(i,j,l), 0.0)
+                if(abs(arrayr43d(i,j,l)-fillvalue) < small) dust(i,j,l,4) = spval
+              enddo
+            enddo
+          enddo
+        endif
+
+        if(trim(fieldname)=='dust5') then
+          !$omp parallel do default(none) private(i,j,l) shared(lm,jsta,jend,ista,iend,dust,arrayr43d,fillvalue,spval)
+          do l=1,lm
+            do j=jsta,jend
+              do i=ista, iend
+                dust(i,j,l,5) = max(arrayr43d(i,j,l), 0.0)
+                if(abs(arrayr43d(i,j,l)-fillvalue) < small) dust(i,j,l,5) = spval
+              enddo
+            enddo
+          enddo
+        endif
+
+        dustcb=0.0
+        dustallcb=0.0
+        do l=1,lm
+          do j=jsta,jend
+            do i=ista, iend
+              if(dust(i,j,l,1)<spval.and.dust(i,j,l,2)<spval.and. &
+                 dust(i,j,l,3)<spval.and.dust(i,j,l,4)<spval.and. & 
+                 dust(i,j,l,5)<spval) then
+                dustcb(i,j)=dustcb(i,j)+ &
+                  (dust(i,j,l,1)+0.38*dust(i,j,l,2))* &
+                  dpres(i,j,l)/grav
+                dustallcb(i,j)=dustallcb(i,j)+ &
+                  (dust(i,j,l,1)+dust(i,j,l,2)+ &
+                  dust(i,j,l,3)+0.74*dust(i,j,l,4))* &
+                  dpres(i,j,l)/grav
+              endif
+            enddo
+          enddo
+        enddo
+
+        if(trim(fieldname)=='seas1') then
+          !$omp parallel do default(none) private(i,j,l) shared(lm,jsta,jend,ista,iend,salt,arrayr43d,fillvalue,spval)
+          do l=1,lm
+            do j=jsta,jend
+              do i=ista, iend
+                salt(i,j,l,1) = max(arrayr43d(i,j,l),0.0)
+                if(abs(arrayr43d(i,j,l)-fillvalue) < small) salt(i,j,l,1) = spval
+              enddo
+            enddo
+          enddo
+        endif
+
+        if(trim(fieldname)=='seas2') then
+          !$omp parallel do default(none) private(i,j,l) shared(lm,jsta,jend,ista,iend,salt,arrayr43d,fillvalue,spval)
+          do l=1,lm
+            do j=jsta,jend
+              do i=ista, iend
+                salt(i,j,l,2) = max(arrayr43d(i,j,l),0.0)
+                if(abs(arrayr43d(i,j,l)-fillvalue) < small) salt(i,j,l,2) = spval
+              enddo
+            enddo
+          enddo
+        endif
+
+        if(trim(fieldname)=='seas3') then
+          !$omp parallel do default(none) private(i,j,l) shared(lm,jsta,jend,ista,iend,salt,arrayr43d,fillvalue,spval)
+          do l=1,lm
+            do j=jsta,jend
+              do i=ista, iend
+                salt(i,j,l,3) = max(arrayr43d(i,j,l),0.0)
+                if(abs(arrayr43d(i,j,l)-fillvalue) < small) salt(i,j,l,3) = spval
+              enddo
+            enddo
+          enddo
+        endif
+
+        if(trim(fieldname)=='seas4') then
+          !$omp parallel do default(none) private(i,j,l) shared(lm,jsta,jend,ista,iend,salt,arrayr43d,fillvalue,spval)
+          do l=1,lm
+            do j=jsta,jend
+              do i=ista, iend
+                salt(i,j,l,4) = max(arrayr43d(i,j,l),0.0)
+                if(abs(arrayr43d(i,j,l)-fillvalue) < small) salt(i,j,l,4) = spval
+              enddo
+            enddo
+          enddo
+        endif
+
+        if(trim(fieldname)=='seas5') then
+          !$omp parallel do default(none) private(i,j,l) shared(lm,jsta,jend,ista,iend,salt,arrayr43d,fillvalue,spval)
+          do l=1,lm
+            do j=jsta,jend
+              do i=ista, iend
+                salt(i,j,l,5) = max(arrayr43d(i,j,l),0.0)
+                if(abs(arrayr43d(i,j,l)-fillvalue) < small) salt(i,j,l,5) = spval
+              enddo
+            enddo
+          enddo
+        endif
+
+        sscb=0.0
+        ssallcb=0.0
+        do l=1,lm
+          do j=jsta,jend
+            do i=ista,iend
+              if(salt(i,j,l,1)<spval.and.salt(i,j,l,2)<spval.and. &
+                 salt(i,j,l,3)<spval.and.salt(i,j,l,4)<spval.and. & 
+                 salt(i,j,l,5)<spval) then
+            sscb(i,j)=sscb(i,j)+ &
+         (salt(i,j,l,1)+salt(i,j,l,2)+0.83*salt(i,j,l,3))*  &
+           dpres(i,j,l)/grav
+
+
+          ssallcb(i,j)=ssallcb(i,j)+ &
+         (salt(i,j,l,1)+salt(i,j,l,2)+salt(i,j,l,3)+salt(i,j,l,4))* &
+           dpres(i,j,l)/grav
+              endif
+            enddo
+          enddo
+        end do ! do loop for l       
+
+        if(trim(fieldname)=='bc1') then
+          !$omp parallel do default(none) private(i,j,l) shared(lm,jsta,jend,ista,iend,soot,arrayr43d,fillvalue,spval)
+          do l=1,lm
+            do j=jsta,jend
+              do i=ista, iend
+                soot(i,j,l,1) = max(arrayr43d(i,j,l),0.0)
+                if(abs(arrayr43d(i,j,l)-fillvalue) < small) soot(i,j,l,1) = spval
+              enddo
+            enddo
+          enddo
+        endif
+
+        if(trim(fieldname)=='bc2') then
+          !$omp parallel do default(none) private(i,j,l) shared(lm,jsta,jend,ista,iend,soot,arrayr43d,fillvalue,spval)
+          do l=1,lm
+            do j=jsta,jend
+              do i=ista, iend
+                soot(i,j,l,2) = max(arrayr43d(i,j,l),0.0)
+                if(abs(arrayr43d(i,j,l)-fillvalue) < small) soot(i,j,l,2) = spval
+              enddo
+            enddo
+          enddo
+        endif
+
+        if(trim(fieldname)=='oc1') then
+          !$omp parallel do default(none) private(i,j,l) shared(lm,jsta,jend,ista,iend,waso,arrayr43d,fillvalue,spval)
+          do l=1,lm
+            do j=jsta,jend
+              do i=ista, iend
+                waso(i,j,l,1) = max(arrayr43d(i,j,l),0.0)
+                if(abs(arrayr43d(i,j,l)-fillvalue) < small) waso(i,j,l,1) = spval
+              enddo
+            enddo
+          enddo
+        endif
+
+        if(trim(fieldname)=='oc2') then
+          !$omp parallel do default(none) private(i,j,l) shared(lm,jsta,jend,ista,iend,waso,arrayr43d,fillvalue,spval)
+          do l=1,lm
+            do j=jsta,jend
+              do i=ista, iend
+                waso(i,j,l,2) = max(arrayr43d(i,j,l),0.0)
+                if(abs(arrayr43d(i,j,l)-fillvalue) < small) waso(i,j,l,2) = spval
+              enddo
+            enddo
+          enddo
+        endif
+
+        bccb=0.0
+        occb=0.0
+        do l=1,lm
+          do j=jsta,jend
+            do i=ista,iend
+              if(soot(i,j,l,1)<spval.and.soot(i,j,l,2)<spval)then
+               bccb(i,j)=bccb(i,j)+(soot(i,j,l,1)+soot(i,j,l,2))* &
+               dpres(i,j,l)/grav
+              endif
+
+              if(waso(i,j,l,1)<spval.and.waso(i,j,l,2)<spval)then
+               occb(i,j)=occb(i,j)+ (waso(i,j,l,1)+waso(i,j,l,2))* &
+               dpres(i,j,l)/grav
+              endif
+            enddo
+          enddo
+        end do ! do loop for l
+
+
+
+       if (gocart_on .or. gccpp_on) then
+        if(trim(fieldname)=='sulf') then
+          !$omp parallel do default(none) private(i,j,l) shared(lm,jsta,jend,ista,iend,suso,arrayr43d,fillvalue,spval)
+          do l=1,lm
+            do j=jsta,jend
+              do i=ista, iend
+                suso(i,j,l,1) = max(arrayr43d(i,j,l),0.0)
+                if(abs(arrayr43d(i,j,l)-fillvalue) < small) suso(i,j,l,1) = spval
+              enddo
+            enddo
+          enddo
+        endif
+
+        if(trim(fieldname)=='pp25') then
+          !$omp parallel do default(none) private(i,j,l) shared(lm,jsta,jend,ista,iend,pp25,arrayr43d,fillvalue,spval)
+          do l=1,lm
+            do j=jsta,jend
+              do i=ista, iend
+                pp25(i,j,l,1) = max(arrayr43d(i,j,l),0.0)
+                if(abs(arrayr43d(i,j,l)-fillvalue) < small) pp25(i,j,l,1) = spval
+              enddo
+            enddo
+          enddo
+        endif
+
+        if(trim(fieldname)=='pp10') then
+          !$omp parallel do default(none) private(i,j,l) shared(lm,jsta,jend,ista,iend,pp10,arrayr43d,fillvalue,spval)
+          do l=1,lm
+            do j=jsta,jend
+              do i=ista, iend
+                pp10(i,j,l,1) = max(arrayr43d(i,j,l),0.0)
+                if(abs(arrayr43d(i,j,l)-fillvalue) < small) pp10(i,j,l,1) = spval
+              enddo
+            enddo
+          enddo
+        endif
+
+       else if (nasa_on) then 
+        if(trim(fieldname)=='so4') then
+          !$omp parallel do default(none) private(i,j,l) shared(lm,jsta,jend,ista,iend,suso,arrayr43d,fillvalue,spval)
+          do l=1,lm
+            do j=jsta,jend
+              do i=ista, iend
+                suso(i,j,l,1) = max(arrayr43d(i,j,l),0.0)
+                if(abs(arrayr43d(i,j,l)-fillvalue) < small) suso(i,j,l,1) = spval
+              enddo
+            enddo
+          enddo
+        endif
+
+        if(trim(fieldname)=='no3an1') then
+          !$omp parallel do default(none) private(i,j,l) shared(lm,jsta,jend,ista,iend,no3,arrayr43d,fillvalue,spval)
+          do l=1,lm
+            do j=jsta,jend
+              do i=ista, iend
+                no3(i,j,l,1) = max(arrayr43d(i,j,l),0.0)
+                if(abs(arrayr43d(i,j,l)-fillvalue) < small) no3(i,j,l,1) = spval
+              enddo
+            enddo
+          enddo
+        endif
+
+        if(trim(fieldname)=='no3an2') then
+          !$omp parallel do default(none) private(i,j,l) shared(lm,jsta,jend,ista,iend,no3,arrayr43d,fillvalue,spval)
+          do l=1,lm
+            do j=jsta,jend
+              do i=ista, iend
+                no3(i,j,l,2) = max(arrayr43d(i,j,l),0.0)
+                if(abs(arrayr43d(i,j,l)-fillvalue) < small) no3(i,j,l,2) = spval
+              enddo
+            enddo
+          enddo
+        endif
+
+        if(trim(fieldname)=='no3an3') then
+          !$omp parallel do default(none) private(i,j,l) shared(lm,jsta,jend,ista,iend,no3,arrayr43d,fillvalue,spval)
+          do l=1,lm
+            do j=jsta,jend
+              do i=ista, iend
+                no3(i,j,l,3) = max(arrayr43d(i,j,l),0.0)
+                if(abs(arrayr43d(i,j,l)-fillvalue) < small) no3(i,j,l,3) = spval
+              enddo
+            enddo
+          enddo
+        endif
+
+        if(trim(fieldname)=='nh4a') then
+          !$omp parallel do default(none) private(i,j,l) shared(lm,jsta,jend,ista,iend,nh4,arrayr43d,fillvalue,spval)
+          do l=1,lm
+            do j=jsta,jend
+              do i=ista, iend
+                nh4(i,j,l,1) = max(arrayr43d(i,j,l),0.0)
+                if(abs(arrayr43d(i,j,l)-fillvalue) < small) nh4(i,j,l,1) = spval
+              enddo
+            enddo
+          enddo
+        endif
+
+       no3cb=0.0
+       nh4cb=0.0
+        do l=1,lm
+          do j=jsta,jend
+            do i=ista,iend
+              if(no3(i,j,l,1)<spval .and. no3(i,j,l,2)<spval .and. &
+                 no3(i,j,l,3)<spval) then
+              no3cb(i,j)=no3cb(i,j)+ (no3(i,j,l,1)+no3(i,j,l,2)+ &
+              no3(i,j,l,3) ) * dpres(i,j,l)/grav
+              endif
+              if(nh4(i,j,l,1)<spval)then
+              nh4cb(i,j)=nh4cb(i,j)+ nh4(i,j,l,1)* &
+              dpres(i,j,l)/grav
+              endif
+            enddo
+          enddo
+        end do ! do loop for l
+
+     if(trim(fieldname)=='pm25') then
+          !$omp parallel do default(none) private(i,j,l) shared(lm,jsta,jend,ista,iend,pp25,arrayr43d,fillvalue,spval)
+          do l=1,lm
+            do j=jsta,jend
+              do i=ista, iend
+                pp25(i,j,l,1) = max(arrayr43d(i,j,l),0.0)
+                if(abs(arrayr43d(i,j,l)-fillvalue) < small) pp25(i,j,l,1) = spval
+              enddo
+            enddo
+          enddo
+        endif
+
+        if(trim(fieldname)=='pm10') then
+          !$omp parallel do default(none) private(i,j,l) shared(lm,jsta,jend,ista,iend,pp10,arrayr43d,fillvalue,spval)
+          do l=1,lm
+            do j=jsta,jend
+              do i=ista, iend
+                pp10(i,j,l,1) = max(arrayr43d(i,j,l),0.0)
+                if(abs(arrayr43d(i,j,l)-fillvalue) < small) pp10(i,j,l,1) = spval
+              enddo
+            enddo
+          enddo
+        endif
+
+       endif !nasa_on
+
+       sulfcb=0.0
+       pp25cb=0.0
+       pp10cb=0.0
+        do l=1,lm
+          do j=jsta,jend 
+            do i=ista,iend
+              if(suso(i,j,l,1)<spval)then
+              sulfcb(i,j)=sulfcb(i,j)+ suso(i,j,l,1)* &
+              dpres(i,j,l)/grav
+              endif
+              if(pp25(i,j,l,1)<spval)then
+              pp25cb(i,j)=pp25cb(i,j)+ pp25(i,j,l,1)* &
+              dpres(i,j,l)/grav
+              endif
+              if(pp10(i,j,l,1)<spval)then
+              pp10cb(i,j)=pp10cb(i,j)+ pp10(i,j,l,1)* &
+              dpres(i,j,l)/grav
+              endif
+            enddo
+          enddo
+        end do ! do loop for l
+
+        l=lm
+        do j=jsta,jend
+          do i=ista,iend
+              TV = MAX(T(I,J,L) * (H1+D608 * MAX(Q(I,J,L),1e-8)),1e-8)
+              RHOMID(I,J,L) = PMID(I,J,L) / (RD*TV)
+
+            dustcb(i,j) = MAX(dustcb(i,j), 0.0)
+            dustallcb(i,j) = MAX(dustallcb(i,j), 0.0)
+            sscb(i,j) = MAX(sscb(i,j), 0.0)
+            ssallcb(i,j) = MAX(ssallcb(i,j), 0.0)
+            bccb(i,j) = MAX(bccb(i,j), 0.0)
+            occb(i,j) = MAX(occb(i,j), 0.0)
+            sulfcb(i,j) = MAX(sulfcb(i,j), 0.0)
+            if (nasa_on) then
+            no3cb(i,j) = MAX(no3cb(i,j), 0.0)
+            nh4cb(i,j) = MAX(nh4cb(i,j), 0.0)
+            endif
+            pp25cb(i,j) = MAX(pp25cb(i,j), 0.0)
+            pp10cb(i,j) = MAX(pp10cb(i,j), 0.0)
+
+!      Surface PM25 dust and seasalt      
+           dustpm(i,j)=(dust(i,j,l,1)+0.38*dust(i,j,l,2))*RHOMID(i,j,l) !ug/m3
+           dustpm10(i,j)=(dust(i,j,l,1)+dust(i,j,l,2)+dust(i,j,l,3)+ &
+            0.74*dust(i,j,l,4))*RHOMID(i,j,l) !ug/m3
+           sspm(i,j)=(salt(i,j,l,1)+salt(i,j,l,2)+ &
+            0.83*salt(i,j,l,3))*RHOMID(i,j,l)  !ug/m3 
+
+           if (gocart_on .or. gccpp_on) then
+!      Surface PM10 concentration
+           dusmass(i,j)=(dust(i,j,l,1)+dust(i,j,l,2)+dust(i,j,l,3)+ &
+            0.74*dust(i,j,l,4)+salt(i,j,l,1)+salt(i,j,l,2)+salt(i,j,l,3)+ &
+            salt(i,j,l,4) + soot(i,j,l,1)+soot(i,j,l,2)+waso(i,j,l,1)+ &
+            waso(i,j,l,2) +suso(i,j,l,1)+pp25(i,j,l,1)+pp10(i,j,l,1)) &
+            *RHOMID(i,j,l)  !ug/m3
+!      Surface PM25 concentration       
+           dusmass25(i,j)=(dust(i,j,l,1)+0.38*dust(i,j,l,2)+ &
+           salt(i,j,l,1)+salt(i,j,l,2)+0.83*salt(i,j,l,3) + &
+           soot(i,j,l,1)+soot(i,j,l,2)+waso(i,j,l,1)+ &
+           waso(i,j,l,2) +suso(i,j,l,1)+pp25(i,j,l,1))*RHOMID(i,j,l)  !ug/m3
+
+!      PM10 column
+           ducmass(i,j)=dustallcb(i,j)+ssallcb(i,j)+bccb(i,j)+ &
+           occb(i,j)+sulfcb(i,j)+pp25cb(i,j)+pp10cb(i,j)
+!      PM25 column
+           ducmass25(i,j)=dustcb(i,j)+sscb(i,j)+bccb(i,j)+occb(i,j) &
+            +sulfcb(i,j)+pp25cb(i,j)
+           endif !gocart_on or gccpp_on
+
+           if (nasa_on) then
+!      Surface PM10 concentration
+           dusmass(i,j)=pp10(i,j,l,1)*RHOMID(i,j,l)  !ug/m3
+!      Surface PM25 concentration       
+           dusmass25(i,j)=pp25(i,j,l,1)*RHOMID(i,j,l)  !ug/m3
+
+!      PM10 column
+           ducmass(i,j)=pp10cb(i,j)
+!      PM25 column
+           ducmass25(i,j)=pp25cb(i,j)
+           endif !nasa_on
+
+          end do
+        end do
+ 
+        endif !end gocart_on, nasa_on
+
 !3d fields
           endif
 
@@ -3265,7 +4130,8 @@ module post_fv3
 !
 !more fields need to be computed
 !
-    end subroutine set_postvars_fv3
-
-
-    end module post_fv3
+        end subroutine set_postvars_fv3
+!
+!-----------------------------------------------------------------------
+!
+end module post_fv3

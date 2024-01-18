@@ -234,7 +234,19 @@ SCHEME_FILES = [
     'physics/physics/GFS_cloud_diagnostics.F90',
     'physics/physics/GFS_rrtmgp_cloud_mp.F90',
     'physics/physics/GFS_rrtmgp_cloud_overlap.F90',
-    'physics/physics/GFS_rrtmgp_sw_post.F90'
+    'physics/physics/GFS_rrtmgp_sw_post.F90',
+    # Chemistry
+    '../../CATChem/drivers/ccpp/catchem_seas_wrapper.F90',
+    '../../CATChem/drivers/ccpp/catchem_dust_wrapper.F90',
+    '../../CATChem/drivers/ccpp/catchem_anthropogenic_wrapper.F90',
+    '../../CATChem/drivers/ccpp/catchem_plume_wrapper.F90',
+    '../../CATChem/drivers/ccpp/catchem_dmsemis_wrapper.F90',
+    '../../CATChem/drivers/ccpp/catchem_gocart_wrapper.F90',
+    '../../CATChem/drivers/ccpp/catchem_rad_wrapper.F90',
+    '../../CATChem/drivers/ccpp/catchem_drydep_wrapper.F90',
+    '../../CATChem/drivers/ccpp/catchem_wetdep_wrapper.F90',
+    '../../CATChem/drivers/ccpp/catchem_settling_wrapper.F90',
+    '../../CATChem/drivers/ccpp/catchem_diag_wrapper.F90'
     ]
 
 # Default build dir, relative to current working directory,
