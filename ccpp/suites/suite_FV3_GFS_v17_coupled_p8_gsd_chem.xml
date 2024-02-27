@@ -91,7 +91,7 @@
         <scheme>mp_thompson_post</scheme>
         <scheme>GFS_MP_generic_post</scheme>
         <scheme>maximum_hourly_diagnostics</scheme>
-      <scheme>gsd_chem_lsdep_wrapper</scheme>
+<!--      <scheme>gsd_chem_lsdep_wrapper</scheme> -->
       <scheme>gsd_chem_gocart_wrapper</scheme>
       <scheme>gsd_chem_rad_wrapper</scheme>
       <scheme>gsd_chem_diag_wrapper</scheme>
