@@ -4591,7 +4591,7 @@ module post_fv3
         do j=jsta,jend
           do i=ista,iend
 
-            tv = t(i,j,l) * (h1+d608*MAX(q(I,J,L),qmin))
+            tv = max(t(i,j,l) * (h1+d608*MAX(q(I,J,L),1e-8)),1e-8)
             rhomid(i,j,l) = pmid(i,j,l) / (rd*tv)
 
             dustcb(i,j) = MAX(dustcb(i,j), 0.0)

@@ -939,6 +939,46 @@
   type = real
   kind = kind_phys
   active = (do_smoke_coupling)
+[dust_in]
+  standard_name = fengsha_dust_input
+  long_name = fengsha dust input
+  units = various
+  dimensions = (horizontal_loop_extent,12,5)
+  type = real
+  kind = kind_phys
+  active = (flag_for_chemistry_package_coupling)
+[emi_in_cplchp]
+  standard_name = anthropogenic_background_input_cplchp
+  long_name = anthropogenic background input cplchp
+  units = various
+  dimensions = (horizontal_loop_extent,10)
+  type = real
+  kind = kind_phys
+  active = (flag_for_chemistry_package_coupling)
+[emi2_in]
+  standard_name = anthropogenic_background_3d_input
+  long_name = anthropogenic background 3d input
+  units = various
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension,3)
+  type = real
+  kind = kind_phys
+  active = (flag_for_chemistry_package_coupling)
+[fire_GBBEPx]
+  standard_name = emission_fire_GBBEPx
+  long_name = emission fire GBBEPx
+  units = various
+  dimensions = (horizontal_loop_extent,5,35)
+  type = real
+  kind = kind_phys
+  active = (flag_for_chemistry_package_coupling)
+[fire_MODIS]
+  standard_name = emission_fire_MODIS
+  long_name = emission fire MODIS
+  units = various
+  dimensions = (horizontal_loop_extent,13)
+  type = real
+  kind = kind_phys
+  active = (flag_for_chemistry_package_coupling)
 [emi_in]
   standard_name = anthropogenic_background_input
   long_name = anthropogenic background input
@@ -2467,6 +2507,14 @@
   type = real
   kind = kind_phys
   active = (flag_for_surface_flux_coupling .or. flag_for_stochastic_physics_perturbations .or. flag_for_chemistry_coupling .or. flag_for_global_cellular_automata .or. flag_for_land_coupling)
+[rain_cplchp]
+  standard_name = lwe_thickness_of_precipitation_amount_for_chemcoupling
+  long_name = total rain precipitation chem package
+  units = m
+  dimensions = (horizontal_loop_extent)
+  type = real
+  kind = kind_phys
+  active = (flag_for_surface_flux_coupling .or. flag_for_stochastic_physics_perturbations .or. flag_for_chemistry_coupling .or. flag_for_chemistry_package_coupling .or. flag_for_global_cellular_automata)
 [rainc_cpl]
   standard_name = cumulative_lwe_thickness_of_convective_precipitation_amount_for_coupling
   long_name = total convective precipitation
@@ -2483,6 +2531,14 @@
   type = real
   kind = kind_phys
   active = (flag_for_surface_flux_coupling .or. flag_for_stochastic_physics_perturbations .or. flag_for_chemistry_coupling .or. flag_for_global_cellular_automata .or. flag_for_land_coupling)
+[snow_cplchp]
+  standard_name = lwe_thickness_of_snow_amount_for_chemcoupling
+  long_name = total snow precipitation chem package
+  units = m
+  dimensions = (horizontal_loop_extent)
+  type = real
+  kind = kind_phys
+  active = (flag_for_surface_flux_coupling .or. flag_for_stochastic_physics_perturbations .or. flag_for_chemistry_coupling .or. flag_for_chemistry_package_coupling .or. flag_for_global_cellular_automata)
 [dusfc_cpl]
   standard_name = cumulative_surface_x_momentum_flux_for_coupling_multiplied_by_timestep
   long_name = cumulative sfc x momentum flux multiplied by timestep
@@ -3002,6 +3058,46 @@
   type = real
   kind = kind_phys
   active = (flag_for_cellular_automata)
+[ca_sgs_gbbepx_frp]
+  standard_name = GBBEPx_fire_radiative_power_for_stochastic_physics
+  long_name = GBBEPx fire radiative power for stochastic physics
+  units = MW
+  dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
+  active = (flag_for_sgs_cellular_automata_in_chemical_tracer_emissions)
+[ca_emis_anthro]
+  standard_name = fraction_of_cellular_automata_for_anthropogenic_emissions
+  long_name = fraction of cellular automata for anthropogenic emissions
+  units = frac
+  dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
+  active = (flag_for_sgs_cellular_automata_in_chemical_tracer_emissions)
+[ca_emis_dust]
+  standard_name = fraction_of_cellular_automata_for_dust_emissions
+  long_name = fraction of cellular automata for dust emissions
+  units = frac
+  dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
+  active = (flag_for_sgs_cellular_automata_in_chemical_tracer_emissions)
+[ca_emis_plume]
+  standard_name = fraction_of_cellular_automata_for_plume_rise_emissions
+  long_name = fraction of cellular automata for plume rise emissions
+  units = frac
+  dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
+  active = (flag_for_sgs_cellular_automata_in_chemical_tracer_emissions)
+[ca_emis_seas]
+  standard_name = fraction_of_cellular_automata_for_sea_salt_emissions
+  long_name = fraction of cellular automata for sea salt emissions
+  units = frac
+  dimensions = (horizontal_dimension)
+  type = real
+  kind = kind_phys
+  active = (flag_for_sgs_cellular_automata_in_chemical_tracer_emissions)
 [ca1]
   standard_name = cellular_automata_global_pattern_from_coupled_process
   long_name = cellular automata global pattern
@@ -3010,6 +3106,12 @@
   type = real
   kind = kind_phys
   active = (flag_for_cellular_automata)
+[vegtype_cpl]
+  standard_name = vegetation_type_classification_for_coupling
+  long_name = vegetation type at each grid cell copied from vegtype
+  units = index
+  dimensions = (horizontal_dimension)
+  type = integer
 [condition]
   standard_name = physics_field_for_coupling
   long_name = physics_field_for_coupling
@@ -3105,6 +3207,22 @@
   type = real
   kind = kind_phys
   active = (control_for_stochastic_land_surface_perturbation /= 0)
+[buffer_ebu]
+  standard_name = chem_buffer_ebu
+  long_name = chemistry buffer of ebu
+  units = various
+  dimensions = (horizontal_loop_extent,vertical_interface_dimension,1,7)
+  type = real
+  kind = kind_phys
+  active = (flag_for_chemistry_package_coupling)
+[dqdti]
+  standard_name = instantaneous_water_vapor_specific_humidity_tendency_due_to_convection
+  long_name = instantaneous moisture tendency due to convection
+  units = kg kg-1 s-1
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  active = (do_smoke_coupling .or. flag_for_chemistry_package_coupling)
 [nwfa2d]
   standard_name = tendency_of_hygroscopic_aerosols_at_surface_adjacent_layer
   long_name = instantaneous water-friendly sfc aerosol source
@@ -3240,7 +3358,7 @@
   dimensions = (horizontal_loop_extent)
   type = real
   kind = kind_phys
-  active = (flag_for_chemistry_coupling)
+  active = (flag_for_chemistry_coupling .or. flag_for_chemistry_package_coupling)
 [qci_conv]
   standard_name = convective_cloud_condesate_after_rainout
   long_name = convective cloud condesate after rainout
@@ -3586,6 +3704,12 @@
 [cplchm]
   standard_name = flag_for_chemistry_coupling
   long_name = flag controlling cplchm collection (default off)
+  units = flag
+  dimensions = ()
+  type = logical
+[cplchp]
+  standard_name = flag_for_chemistry_package_coupling
+  long_name = flag controlling cplchp collection (default off)
   units = flag
   dimensions = ()
   type = logical
@@ -5968,6 +6092,12 @@
   units = flag
   dimensions = ()
   type = logical
+[ca_sgs_emis]
+  standard_name = flag_for_sgs_cellular_automata_in_chemical_tracer_emissions
+  long_name = switch for sgs ca in chemical tracer emissions
+  units = flag
+  dimensions = ()
+  type = logical
 [ca_global]
   standard_name = flag_for_global_cellular_automata
   long_name = switch for global ca
@@ -6009,6 +6139,12 @@
 [do_sppt]
   standard_name = flag_for_stochastic_physics_perturbations
   long_name = flag for stochastic physics perturbations
+  units = flag
+  dimensions = ()
+  type = logical
+[do_sppt_emis]
+  standard_name = flag_for_stochastic_emissions_perturbations
+  long_name = flag for stochastic emissions perturbations
   units = flag
   dimensions = ()
   type = logical
@@ -6089,6 +6225,62 @@
   type = character
   kind = len=3
   active = (control_for_stochastic_land_surface_perturbation /= 0)
+[pert_scale_anthro]
+  standard_name = anthropogenic_scaling_factor
+  long_name = Scaling factor for emissions of anthropogenic emissions
+  units = none
+  dimensions = ()
+  type = real
+  kind = kind_phys
+[pert_scale_dust]
+  standard_name = dust_emissions_scaling_factor
+  long_name = Scaling factor for emissions of dust emissions
+  units = none
+  dimensions = ()
+  type = real
+  kind = kind_phys
+[pert_scale_plume]
+  standard_name = plume_emissions_scaling_factor
+  long_name = Scaling factor for emissions of plume rising
+  units = none
+  dimensions = ()
+  type = real
+  kind = kind_phys
+[pert_scale_seas]
+  standard_name = sea_spray_emissions_scaling_factor
+  long_name = Scaling factor for emissions of sea spray
+  units = none
+  dimensions = ()
+  type = real
+  kind = kind_phys
+[emis_amp_anthro]
+  standard_name = anthropogenic_emissions_perturbation_amplitude
+  long_name = multiplier of emissions random perturbation of anthropogenic emissions
+  units = none
+  dimensions = ()
+  type = real
+  kind = kind_phys
+[emis_amp_dust]
+  standard_name = dust_emissions_perturbation_amplitude
+  long_name = multiplier of emissions random perturbation of dust emissions
+  units = none
+  dimensions = ()
+  type = real
+  kind = kind_phys
+[emis_amp_plume]
+  standard_name = plume_emissions_perturbation_amplitude
+  long_name = multiplier of emissions random perturbation of plume rise emissions
+  units = none
+  dimensions = ()
+  type = real
+  kind = kind_phys
+[emis_amp_seas]
+  standard_name = sea_spray_emissions_perturbation_amplitude
+  long_name = multiplier of emissions random perturbation of sea salt emissions
+  units = none
+  dimensions = ()
+  type = real
+  kind = kind_phys
 [n_var_spp]
   standard_name = number_of_perturbed_spp_schemes
   long_name = number of perturbed spp schemes
@@ -6491,6 +6683,36 @@
   units = index
   dimensions = ()
   type = integer
+[ntso2]
+  standard_name = index_for_so2
+  long_name = tracer index for so2
+  units = index
+  dimensions = ()
+  type = integer
+[ntDMS]
+  standard_name = index_for_DMS
+  long_name = tracer index for DMS
+  units = index
+  dimensions = ()
+  type = integer
+[ntmsa]
+  standard_name = index_for_msa
+  long_name = tracer index for msa
+  units = index
+  dimensions = ()
+  type = integer
+[ntpp25]
+  standard_name = index_for_pp25
+  long_name = tracer index for pp25
+  units = index
+  dimensions = ()
+  type = integer
+[ntpp10]
+  standard_name = index_for_pp10
+  long_name = tracer index for pp10
+  units = index
+  dimensions = ()
+  type = integer
 [ntsmoke]
   standard_name = index_for_smoke_in_tracer_concentration_array
   long_name = tracer index for smoke
@@ -6708,6 +6930,215 @@
   units = index
   dimensions = ()
   type = integer
+[aer_bc_opt]
+  standard_name = catchem_aer_bc_opt
+  long_name = catchem aer bc option not used
+  units = index
+  dimensions = ()
+  type = integer
+[aer_ic_opt]
+  standard_name = catchem_aer_ic_opt
+  long_name = catchem aer ic option not used
+  units = index
+  dimensions = ()
+  type = integer
+[aer_ra_feedback]
+  standard_name = catchem_aer_ra_feedback
+  long_name = catchem aer radiation feedback option
+  units = index
+  dimensions = ()
+  type = integer
+[aerchem_onoff]
+  standard_name = catchem_aerchem_onoff
+  long_name = catchem aerchem onoff option not used
+  units = index
+  dimensions = ()
+  type = integer
+[bio_emiss_opt]
+  standard_name = catchem_bio_emiss_opt
+  long_name = catchem bio emiss option not used
+  units = index
+  dimensions = ()
+  type = integer
+[biomass_burn_cplchp]
+  standard_name = catchem_biomass_burn_opt
+  long_name = catchem biomass burning option
+  units = index
+  dimensions = ()
+  type = integer
+[chem_conv_tr]
+  standard_name = catchem_conv_tr
+  long_name = catchem convective transport option
+  units = index
+  dimensions = ()
+  type = integer
+[chem_in_opt]
+  standard_name = catchem_in_opt
+  long_name = catchem coldstart or restart option
+  units = index
+  dimensions = ()
+  type = integer
+[chem_opt]
+  standard_name = catchem_option
+  long_name = catchem option
+  units = index
+  dimensions = ()
+  type = integer
+[chemdt]
+  standard_name = catchem_dt
+  long_name = catchem dt
+  units = index
+  dimensions = ()
+  type = integer
+[cldchem_onoff]
+  standard_name = catchem_cldchem_onoff
+  long_name = catchem cldchem onoff option not used
+  units = index
+  dimensions = ()
+  type = integer
+[dmsemis_opt]
+  standard_name = catchem_dms_emis_opt
+  long_name = catchem dms emission option
+  units = index
+  dimensions = ()
+  type = integer
+[dust_opt_cplchp]
+  standard_name = catchem_dust_opt
+  long_name = catchem dust chem option
+  units = index
+  dimensions = ()
+  type = integer
+[dust_alpha_catc]
+  standard_name = catchem_dust_alpha
+  long_name = fengsha dust alpha
+  units = none
+  dimensions = ()
+  type = real
+  kind = kind_phys
+[dust_gamma_catc]
+  standard_name = catchem_dust_gamma
+  long_name = fengsha dust gamma
+  units = none
+  dimensions = ()
+  type = real
+  kind = kind_phys
+[dust_calcdrag]
+  standard_name = catchem_dust_calcdrag
+  long_name = catchem dust calcdrag
+  units = index
+  dimensions = ()
+  type = integer
+[emiss_inpt_opt]
+  standard_name = catchem_emiss_inpt_opt
+  long_name = catchem emiss inpt opt
+  units = index
+  dimensions = ()
+  type = integer
+[emiss_opt]
+  standard_name = catchem_emiss_opt
+  long_name = catchem emiss option not used
+  units = index
+  dimensions = ()
+  type = integer
+[gas_bc_opt]
+  standard_name = catchem_gas_bc_opt
+  long_name = catchem gas bc option not used
+  units = index
+  dimensions = ()
+  type = integer
+[gas_ic_opt]
+  standard_name = catchem_gas_ic_opt
+  long_name = catchem gas ic option not used
+  units = index
+  dimensions = ()
+  type = integer
+[gaschem_onoff]
+  standard_name = catchem_gaschem_onoff
+  long_name = catchem gaschem onoff option not used
+  units = index
+  dimensions = ()
+  type = integer
+[kemit]
+  standard_name = k_emit_dry_dep
+  long_name = catchem k emit dimention for dry deoposition
+  units = index
+  dimensions = ()
+  type = integer
+[phot_opt]
+  standard_name = catchem_phot_opt
+  long_name = catchem phot option not used
+  units = index
+  dimensions = ()
+  type = integer
+[photdt]
+  standard_name = catchem_photdt
+  long_name = catchem photdt
+  units = index
+  dimensions = ()
+  type = integer
+[plumerisefire_frq_cplchp]
+  standard_name = catchem_plumerisefire_frq
+  long_name = catchem plumerise fire frequency
+  units = index
+  dimensions = ()
+  type = integer
+[plumerise_flag]
+  standard_name = catchem_plumerise_flag
+  long_name = catchem plumerise flag
+  units = index
+  dimensions = ()
+  type = integer
+[seas_opt_cplchp]
+  standard_name = catchem_sea_salt_opt
+  long_name = catchem sea salt emission option
+  units = index
+  dimensions = ()
+  type = integer
+[seas_emis_scheme]
+  standard_name = catchem_seas_emis_scheme_sst
+  long_name = catchem seas emis scheme sst
+  units = index
+  dimensions = ()
+  type = integer
+[seas_emis_scale]
+  standard_name = catchem_seas_emis_scale
+  long_name = catchem seas emis scale
+  units = none
+  dimensions = (5)
+  type = real
+  kind = kind_phys
+[vertmix_onoff]
+  standard_name = catchem_vertmix_onoff
+  long_name = catchem vertmix onoff option not used
+  units = index
+  dimensions = ()
+  type = integer
+[aer_ra_frq]
+  standard_name = catchem_aer_ra_frq
+  long_name = catchem aer radiation frequency
+  units = index
+  dimensions = ()
+  type = integer
+[wetdep_ls_cplchp]
+  standard_name = catchem_wetdep_ls_opt
+  long_name = catchem large scale wet deposition option
+  units = index
+  dimensions = ()
+  type = integer
+[restart_inname]
+  standard_name = catchem_restart_input_name
+  long_name = catchem restart input directory name
+  units = none
+  dimensions = ()
+  type = character
+  kind = len=512
+[restart_outname]
+  standard_name = catchem_restart_output_name
+  long_name = catchem restart output directory name
+  units = none
+  dimensions = ()
+  type = character
+  kind = len=512
 [mix_chem]
   standard_name = do_planetary_boundary_layer_smoke_mixing
   long_name = flag for rrfs smoke mynn tracer mixing
@@ -9313,6 +9744,107 @@
   long_name = instantaneous 2D (max-in-column) cloud fraction
   units = frac
   dimensions = (horizontal_loop_extent)
+  type = real
+  kind = kind_phys
+[ndust]
+  standard_name = number_of_dust_bins_for_diagnostics
+  long_name = number of dust bins for diagnostics
+  units = count
+  dimensions = ()
+  type = integer
+[nseasalt]
+  standard_name = number_of_seasalt_bins_for_diagnostics
+  long_name = number of seasalt bins for diagnostics
+  units = count
+  dimensions = ()
+  type = integer
+[ntchmdiag]
+  standard_name = number_of_chemical_tracers_for_diagnostics
+  long_name = number of chemical tracers for diagnostic output
+  units = count
+  dimensions = ()
+  type = integer
+[duem]
+  standard_name = instantaneous_dust_emission_flux
+  long_name = instantaneous dust emission flux
+  units = kg m-2 s-1
+  dimensions = (horizontal_loop_extent,number_of_dust_bins_for_diagnostics)
+  type = real
+  kind = kind_phys
+  active = (number_of_dust_bins_for_diagnostics > 0)
+[ssem]
+  standard_name = instantaneous_seasalt_emission_flux
+  long_name = instantaneous sea salt emission flux
+  units = kg m-2 s-1
+  dimensions = (horizontal_loop_extent,number_of_seasalt_bins_for_diagnostics)
+  type = real
+  kind = kind_phys
+  active = (number_of_seasalt_bins_for_diagnostics > 0)
+[sedim]
+  standard_name = instantaneous_sedimentation
+  long_name = instantaneous sedimentation
+  units = kg m-2 s-1
+  dimensions = (horizontal_loop_extent,number_of_chemical_tracers_for_diagnostics)
+  type = real
+  kind = kind_phys
+  active = (number_of_chemical_tracers_for_diagnostics > 0)
+[drydep]
+  standard_name = instantaneous_dry_deposition
+  long_name = instantaneous dry deposition
+  units = kg m-2 s-1
+  dimensions = (horizontal_loop_extent,number_of_chemical_tracers_for_diagnostics)
+  type = real
+  kind = kind_phys
+  active = (number_of_chemical_tracers_for_diagnostics > 0)
+[wetdpl]
+  standard_name = instantaneous_large_scale_wet_deposition
+  long_name = instantaneous large-scale wet deposition
+  units = kg m-2 s-1
+  dimensions = (horizontal_loop_extent,number_of_chemical_tracers_for_diagnostics)
+  type = real
+  kind = kind_phys
+  active = (number_of_chemical_tracers_for_diagnostics > 0)
+[wetdpc]
+  standard_name = instantaneous_convective_scale_wet_deposition
+  long_name = instantaneous convective-scale wet deposition
+  units = kg m-2 s-1
+  dimensions = (horizontal_loop_extent,number_of_chemical_tracers_for_diagnostics)
+  type = real
+  kind = kind_phys
+[wetdpc_deep]
+  standard_name = instantaneous_deep_convective_wet_deposition
+  long_name = instantaneous deep convective wet deposition
+  units = kg m-2 s-1
+  dimensions = (horizontal_loop_extent,number_of_chemical_tracers)
+  type = real
+  kind = kind_phys
+[wetdpc_mid]
+  standard_name = instantaneous_mid_convective_wet_deposition
+  long_name = instantaneous mid convective wet deposition
+  units = kg m-2 s-1
+  dimensions = (horizontal_loop_extent,number_of_chemical_tracers)
+  type = real
+  kind = kind_phys
+[wetdpc_shal]
+  standard_name = instantaneous_shal_convective_wet_deposition
+  long_name = instantaneous shallow convective wet deposition
+  units = kg m-2 s-1
+  dimensions = (horizontal_loop_extent,number_of_chemical_tracers)
+  type = real
+  kind = kind_phys
+  active = (number_of_chemical_tracers_for_diagnostics > 0)
+[abem]
+  standard_name = instantaneous_anthopogenic_and_biomass_burning_emissions
+  long_name = instantaneous anthopogenic and biomass burning emissions for black carbon, organic carbon, and sulfur dioxide
+  units = kg m-2 s-1
+  dimensions = (horizontal_loop_extent,12)
+  type = real
+  kind = kind_phys
+[aecm]
+  standard_name = instantaneous_aerosol_column_mass_densities
+  long_name = instantaneous aerosol column mass densities for pm2.5, black carbon, organic carbon, sulfate, dust, sea salt
+  units = kg m-2
+  dimensions = (horizontal_loop_extent,6)
   type = real
   kind = kind_phys
 [lwp_ex]

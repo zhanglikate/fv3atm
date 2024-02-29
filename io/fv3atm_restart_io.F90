@@ -21,6 +21,7 @@ module fv3atm_restart_io_mod
        create_3d_field_and_add_to_bundle, copy_from_gfs_data, axis_type
   use fv3atm_sfc_io
   use fv3atm_rrfs_sd_io
+  use fv3atm_catchem_io
   use fv3atm_clm_lake_io
   use fv3atm_oro_io
 
@@ -72,11 +73,20 @@ module fv3atm_restart_io_mod
   !>@ Filename template for monthly dust data for RRFS_SD. FMS may add grid and tile information to the name
   character(len=32), parameter  :: fn_dust12m= 'dust12m_data.nc'
 
-  !>@ Filename template for RRFS-SD emissions data. FMS may add grid and tile information to the name
+  !>@ Filename template for RRFS-SD/CATChem emissions data. FMS may add grid and tile information to the name
   character(len=32), parameter  :: fn_emi    = 'emi_data.nc'
 
   !>@ Filename template for RRFS-SD smoke data. FMS may add grid and tile information to the name
   character(len=32), parameter  :: fn_rrfssd = 'SMOKE_RRFS_data.nc'
+
+  !>@ Filename template for CATChem OH, H2O2,NO3 data. FMS may add grid and tile information to the name
+  character(len=32), parameter  :: fn_emi2 = 'emi2_data.nc'
+
+  !>@ Filename template for monthly dust data for CATChem. FMS may add grid and tile information to the name
+  character(len=32), parameter  :: fn_dust = 'dust_data_g12m.nc'
+
+  !>@ Filename template for monthly GB fire daa for CATChem. FMS may add grid and tile information to the name
+  character(len=32), parameter  :: fn_gbbepx = 'FIRE_GBBEPx_data.nc'
 
   real(kind_phys), parameter:: zero = 0.0, one = 1.0
 
@@ -517,6 +527,9 @@ contains
     character(5)  :: indir='INPUT'
     character(37) :: infile
     character(2)  :: file_ver
+    character(40) :: idd
+    character(2)  :: i_trim
+    integer :: igb,ie
     !--- fms2_io file open logic
     logical :: amiopen
     logical :: override_frac_grid
@@ -524,12 +537,14 @@ contains
     type(clm_lake_data_type) :: clm_lake
     type(rrfs_sd_state_type) :: rrfs_sd_state
     type(rrfs_sd_emissions_type) :: rrfs_sd_emis
+    type(catchem_emissions_type) :: catchem_emis
     type(Oro_scale_io_data_type) :: oro_ss
     type(Oro_scale_io_data_type) :: oro_ls
     type(Sfc_io_data_type) :: sfc
     type(Oro_io_data_type) :: oro
 
-    type(FmsNetcdfDomainFile_t) :: Oro_restart, Sfc_restart, dust12m_restart, emi_restart, rrfssd_restart
+    type(FmsNetcdfDomainFile_t) :: Oro_restart, Sfc_restart, dust12m_restart,dust_restart, emi_restart, rrfssd_restart,&
+                                   emi2_restart, gbbepx_restart
     type(FmsNetcdfDomainFile_t) :: Oro_ls_restart, Oro_ss_restart
 
     !--- OROGRAPHY FILE
@@ -606,6 +621,92 @@ contains
       call rrfs_sd_emis%copy_fire(Model, Sfcprop, Atm_block)
 
     endif if_smoke  ! RRFS_SD
+
+
+    if_catchem: if(Model%cplchp) then  ! for CATChem
+
+    !--- Dust input FILE
+    !--- open file
+    infile=trim(indir)//'/'//trim(fn_dust)
+    amiopen=open_file(dust_restart, trim(infile), 'read', domain=fv_domain, is_restart=.true., dont_add_res_to_filename=.true.)
+    if (.not.amiopen) call mpp_error( FATAL, 'Error with opening file'//trim(infile) )
+
+      !--- Register axes and variables, allocate memory:
+      call catchem_emis%register_dust(dust_restart, Atm_block)
+
+      !--- read new GSL created global dust 12m restart/data
+      call mpp_error(NOTE,'reading dust information from INPUT/dust_data_g12m.tile*.nc')
+      call read_restart(dust_restart)
+      call close_file(dust_restart)
+
+      !--- Copy to Sfcprop and free temporary arrays:
+      call catchem_emis%copy_dust(Sfcprop, Atm_block)
+
+      !----------------------------------------------
+
+      !--- open anthropogenic emission file
+      infile=trim(indir)//'/'//trim(fn_emi)
+      amiopen=open_file(emi_restart, trim(infile), 'read', domain=fv_domain, is_restart=.true., dont_add_res_to_filename=.true.)
+      if (.not.amiopen) call mpp_error( FATAL, 'Error with opening file'//trim(infile) )
+
+      ! Register axes and variables, allocate memory
+      call catchem_emis%register_emi(emi_restart, Atm_block)
+
+      !--- read anthropogenic emi restart/data
+      call mpp_error(NOTE,'reading emi information from INPUT/emi_data.tile*.nc')
+      call read_restart(emi_restart)
+      call close_file(emi_restart)
+
+      !--- Copy to Sfcprop and free temporary arrays:
+      call catchem_emis%copy_emi(Sfcprop, Atm_block)
+
+      !----------------------------------------------
+
+      !--- GOCART background input FILE
+      !--- open file
+      infile=trim(indir)//'/'//trim(fn_emi2)
+      amiopen=open_file(emi2_restart, trim(infile), 'read', domain=fv_domain, is_restart=.true., dont_add_res_to_filename=.true.)
+      if (.not.amiopen) call mpp_error( FATAL, 'Error with opening file'//trim(infile) )
+
+
+      !--- read new GSL created GOCART background emi2 restart/data
+      call mpp_error(NOTE,'reading emi2 information from INPUT/emi2_data.tile*.nc')
+      call read_restart(emi2_restart)
+      call close_file(emi2_restart)
+      !--- Copy to Sfcprop and free temporary arrays:
+      call catchem_emis%copy_emi2(Sfcprop, Atm_block)
+
+      !----------------------------------------------
+
+      !--- GBBEPx fire input FILE
+      !--- open file
+      igb=Model%emiss_opt
+      do ie=1, igb
+      write(i_trim, '(I0)') ie
+      idd = trim('d' // trim(i_trim) // '_' // trim(fn_gbbepx))
+      !--- open file
+      if (igb == 1) then
+      infile=trim(indir)//'/'//trim(fn_gbbepx)
+      else
+      infile=trim(indir)//'/'//trim(idd)
+      endif
+      !print *, 'GBfile', infile
+      amiopen=open_file(gbbepx_restart, trim(infile), 'read', domain=fv_domain, is_restart=.true., dont_add_res_to_filename=.true.)
+      if (.not.amiopen) call mpp_error( FATAL, 'Error with opening file'//trim(infile) )
+
+      ! Register axes and variables, allocate memory
+      call catchem_emis%register_gbbepx(Model, rrfssd_restart, Atm_block)
+
+      !--- read new GSL created gbbepx restart/data
+      call mpp_error(NOTE,'reading gbbepx information from INPUT/FIRE_GBBEPx_data.nc')
+      call read_restart(gbbepx_restart)
+      call close_file(gbbepx_restart)
+
+      !--- Copy to Sfcprop and free temporary arrays:
+      call catchem_emis%copy_gbbepx(Model, Sfcprop, Atm_block,ie)
+      enddo
+    endif if_catchem  ! CATChem
+
 
     !--- Modify/read-in additional orographic static fields for GSL drag suite
     if (Model%gwd_opt==3 .or. Model%gwd_opt==33 .or. &

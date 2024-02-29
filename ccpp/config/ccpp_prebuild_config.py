@@ -202,7 +202,19 @@ SCHEME_FILES = [
     'physics/physics/smoke_dust/rrfs_smoke_wrapper.F90',
     'physics/physics/smoke_dust/rrfs_smoke_postpbl.F90',
     'physics/physics/tools/get_prs_fv3.F90',
-    'physics/physics/tools/get_phi_fv3.F90'
+    'physics/physics/tools/get_phi_fv3.F90',
+    # Chemistry
+    '../../CATChem/drivers/ccpp/catchem_seas_wrapper.F90',
+    '../../CATChem/drivers/ccpp/catchem_dust_wrapper.F90',
+    '../../CATChem/drivers/ccpp/catchem_anthropogenic_wrapper.F90',
+    '../../CATChem/drivers/ccpp/catchem_plume_wrapper.F90',
+    '../../CATChem/drivers/ccpp/catchem_dmsemis_wrapper.F90',
+    '../../CATChem/drivers/ccpp/catchem_gocart_wrapper.F90',
+    '../../CATChem/drivers/ccpp/catchem_rad_wrapper.F90',
+    '../../CATChem/drivers/ccpp/catchem_drydep_wrapper.F90',
+    '../../CATChem/drivers/ccpp/catchem_wetdep_wrapper.F90',
+    '../../CATChem/drivers/ccpp/catchem_settling_wrapper.F90',
+    '../../CATChem/drivers/ccpp/catchem_diag_wrapper.F90'
     ]
 
 # Default build dir, relative to current working directory,
