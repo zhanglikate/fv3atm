@@ -3216,6 +3216,8 @@ module GFS_typedefs
     end if
 
     !-- cellular automata
+    allocate (Coupling%vegtype_cpl(IM))
+    Coupling%vegtype_cpl = clear_val
     allocate (Coupling%condition(IM))
     if (Model%do_ca) then
       allocate (Coupling%ca1      (IM))

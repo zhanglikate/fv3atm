@@ -667,7 +667,9 @@ contains
       infile=trim(indir)//'/'//trim(fn_emi2)
       amiopen=open_file(emi2_restart, trim(infile), 'read', domain=fv_domain, is_restart=.true., dont_add_res_to_filename=.true.)
       if (.not.amiopen) call mpp_error( FATAL, 'Error with opening file'//trim(infile) )
-
+      
+      ! Register axes and variables, allocate memory
+      call catchem_emis%register_emi2(emi2_restart, Atm_block)
 
       !--- read new GSL created GOCART background emi2 restart/data
       call mpp_error(NOTE,'reading emi2 information from INPUT/emi2_data.tile*.nc')
@@ -695,7 +697,7 @@ contains
       if (.not.amiopen) call mpp_error( FATAL, 'Error with opening file'//trim(infile) )
 
       ! Register axes and variables, allocate memory
-      call catchem_emis%register_gbbepx(Model, rrfssd_restart, Atm_block)
+      call catchem_emis%register_gbbepx(gbbepx_restart, Atm_block)
 
       !--- read new GSL created gbbepx restart/data
       call mpp_error(NOTE,'reading gbbepx information from INPUT/FIRE_GBBEPx_data.nc')
@@ -703,7 +705,7 @@ contains
       call close_file(gbbepx_restart)
 
       !--- Copy to Sfcprop and free temporary arrays:
-      call catchem_emis%copy_gbbepx(Model, Sfcprop, Atm_block,ie)
+      call catchem_emis%copy_gbbepx(Sfcprop, Atm_block,ie)
       enddo
     endif if_catchem  ! CATChem
 

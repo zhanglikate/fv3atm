@@ -2506,7 +2506,7 @@
   dimensions = (horizontal_loop_extent)
   type = real
   kind = kind_phys
-  active = (flag_for_surface_flux_coupling .or. flag_for_stochastic_physics_perturbations .or. flag_for_chemistry_coupling .or. flag_for_global_cellular_automata .or. flag_for_land_coupling)
+  active = (flag_for_surface_flux_coupling .or. flag_for_stochastic_physics_perturbations .or. flag_for_chemistry_coupling .or. flag_for_chemistry_package_coupling .or. flag_for_global_cellular_automata .or. flag_for_land_coupling)
 [rain_cplchp]
   standard_name = lwe_thickness_of_precipitation_amount_for_chemcoupling
   long_name = total rain precipitation chem package
@@ -2522,7 +2522,7 @@
   dimensions = (horizontal_loop_extent)
   type = real
   kind = kind_phys
-  active = (flag_for_surface_flux_coupling .or. flag_for_chemistry_coupling .or. flag_for_land_coupling)
+  active = (flag_for_surface_flux_coupling .or. flag_for_chemistry_coupling .or. flag_for_chemistry_package_coupling .or. flag_for_land_coupling)
 [snow_cpl]
   standard_name = cumulative_lwe_thickness_of_snow_amount_for_coupling
   long_name = total snow precipitation
@@ -2530,7 +2530,7 @@
   dimensions = (horizontal_loop_extent)
   type = real
   kind = kind_phys
-  active = (flag_for_surface_flux_coupling .or. flag_for_stochastic_physics_perturbations .or. flag_for_chemistry_coupling .or. flag_for_global_cellular_automata .or. flag_for_land_coupling)
+  active = (flag_for_surface_flux_coupling .or. flag_for_stochastic_physics_perturbations .or. flag_for_chemistry_coupling .or. flag_for_chemistry_package_coupling .or. flag_for_global_cellular_automata .or. flag_for_land_coupling)
 [snow_cplchp]
   standard_name = lwe_thickness_of_snow_amount_for_chemcoupling
   long_name = total snow precipitation chem package

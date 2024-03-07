@@ -1,5 +1,5 @@
 !> \file fv3atm_catchem_io.F90
-!! This file contains derived types and subroutines for RRFS-SD scheme I/O.
+!! This file contains derived types and subroutines for CATChem scheme I/O.
 !! They read and write restart files, and read emissions data.
 
 module fv3atm_catchem_io
@@ -555,12 +555,12 @@ contains
     endif
 
     call get_nx_ny_from_atm(Atm_block, nx, ny)
-    allocate(data%emi_name(data%nvar_emi2))
+    allocate(data%emi2_name(data%nvar_emi2))
     allocate(data%emi2_var(nx,ny,64,data%nvar_emi2))
 
-    data%emi_name(1)  = 'h2o2'
-    data%emi_name(2)  = 'no3'
-    data%emi_name(3)  = 'oh'
+    data%emi2_name(1)  = 'h2o2'
+    data%emi2_name(2)  = 'no3'
+    data%emi2_name(3)  = 'oh'
     !--- register axis
     call register_axis(restart, 'lon', 'X')
     call register_axis(restart, 'lat', 'Y')
@@ -611,10 +611,9 @@ contains
   ! --------------------------------------------------------------------
 
   !>@ Allocates temporary arrays and registers variables for reading the fire data file.
-  subroutine catchem_emissions_register_gbbepx(data, Model, restart, Atm_block)
+  subroutine catchem_emissions_register_gbbepx(data, restart, Atm_block)
     implicit none
     class(catchem_emissions_type) :: data
-    type(GFS_control_type),   intent(in) :: Model
     type(FmsNetcdfDomainFile_t) :: restart
     type(block_control_type), intent(in) :: Atm_block
 
@@ -659,16 +658,14 @@ contains
   ! --------------------------------------------------------------------
 
   !>@ Called after register_fire() to copy data from internal arrays to the model grid and deallocate arrays
-  subroutine catchem_emissions_copy_gbbepx(data, Model, Sfcprop, Atm_block,ie)
+  subroutine catchem_emissions_copy_gbbepx(data, Sfcprop, Atm_block,ie)
     implicit none
     class(catchem_emissions_type) :: data
-    type(GFS_control_type),   intent(in) :: Model
     type(GFS_sfcprop_type),    intent(inout) :: Sfcprop(:)
     type(block_control_type), intent(in) :: Atm_block
     integer, intent (in) :: ie
 
     integer :: nb, ix, k, i, j
-    integer :: ebb_dcycle
 
 
     !$omp parallel do default(shared) private(i, j, nb, ix, k)
