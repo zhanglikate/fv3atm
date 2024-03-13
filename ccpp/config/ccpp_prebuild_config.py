@@ -203,7 +203,6 @@ SCHEME_FILES = [
     'physics/physics/smoke_dust/rrfs_smoke_postpbl.F90',
     'physics/physics/tools/get_prs_fv3.F90',
     'physics/physics/tools/get_phi_fv3.F90',
-    # Chemistry
     '../../CATChem/drivers/ccpp/catchem_seas_wrapper.F90',
     '../../CATChem/drivers/ccpp/catchem_dust_wrapper.F90',
     '../../CATChem/drivers/ccpp/catchem_anthropogenic_wrapper.F90',
