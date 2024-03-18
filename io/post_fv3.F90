@@ -2406,7 +2406,12 @@ module post_fv3
             if ((gocart_on .or. gccpp_on) .and. d2d_chem) then
 
               do K = 1, nbin_du
-                write(VarName, '(A,I3.3)') 'duem', k
+                if ( K == 1) VarName='duem001'
+                if ( K == 2) VarName='duem002'
+                if ( K == 3) VarName='duem003'
+                if ( K == 4) VarName='duem004'
+                if ( K == 5) VarName='duem005'
+
                 if(trim(fieldname)==VarName) then
                   !$omp parallel do default(none) private(i,j,K) shared(jsta,jend,ista,iend,spval,duem,arrayr42d,fillvalue)
                   do j=jsta,jend
@@ -2545,11 +2550,11 @@ module post_fv3
               enddo
 
               do K = 1, nbin_ss
-                if ( K == 1) VarName='seas1wt'
-                if ( K == 2) VarName='seas2wt'
-                if ( K == 3) VarName='seas3wt'
-                if ( K == 4) VarName='seas4wt'
-                if ( K == 5) VarName='seas5wt'
+                if ( K == 1) VarName='seas1wtl'
+                if ( K == 2) VarName='seas2wtl'
+                if ( K == 3) VarName='seas3wtl'
+                if ( K == 4) VarName='seas4wtl'
+                if ( K == 5) VarName='seas5wtl'
 
                 if(trim(fieldname)==VarName) then
                   !$omp parallel do default(none) private(i,j,K) shared(jsta,jend,ista,iend,spval,sswt,arrayr42d,fillvalue)
@@ -2741,7 +2746,7 @@ module post_fv3
                 enddo
               endif
 
-            endif !end gocart_on
+            endif !end gocart_on, d2d_chem
 
             ! inst  cloud top pressure
             if(trim(fieldname)=='prescnvclt') then
@@ -4488,6 +4493,13 @@ module post_fv3
       if(gocart_on .or. gccpp_on .or. nasa_on) then
         dustcb=0.0
         dustallcb=0.0
+        sscb=0.0
+        ssallcb=0.0
+        bccb=0.0
+        occb=0.0
+        sulfcb=0.0
+        pp25cb=0.0
+        pp10cb=0.0
         do l=1,lm
           do j=jsta,jend
             do i=ista, iend
@@ -4502,91 +4514,67 @@ module post_fv3
                   dust(i,j,l,3)+0.74*dust(i,j,l,4))* &
                   dpres(i,j,l)/grav
               endif
-            enddo
-          enddo
-        enddo
- 
-        sscb=0.0
-        ssallcb=0.0
-        do l=1,lm
-          do j=jsta,jend
-            do i=ista,iend
+
               if(salt(i,j,l,1)<spval.and.salt(i,j,l,2)<spval.and. &
                  salt(i,j,l,3)<spval.and.salt(i,j,l,4)<spval.and. &
                  salt(i,j,l,5)<spval) then
-            sscb(i,j)=sscb(i,j)+ &
-         (salt(i,j,l,1)+salt(i,j,l,2)+0.83*salt(i,j,l,3))*  &
-           dpres(i,j,l)/grav
-
-
-          ssallcb(i,j)=ssallcb(i,j)+ &
-         (salt(i,j,l,1)+salt(i,j,l,2)+salt(i,j,l,3)+salt(i,j,l,4))* &
-           dpres(i,j,l)/grav
+                 sscb(i,j)=sscb(i,j)+ &
+                   (salt(i,j,l,1)+salt(i,j,l,2)+0.83*salt(i,j,l,3))*  &
+                    dpres(i,j,l)/grav
+                 ssallcb(i,j)=ssallcb(i,j)+ &
+                    (salt(i,j,l,1)+salt(i,j,l,2)+salt(i,j,l,3)+salt(i,j,l,4))* &
+                    dpres(i,j,l)/grav
               endif
-            enddo
-          enddo
-        end do 
 
-        bccb=0.0
-        occb=0.0
-        do l=1,lm
-          do j=jsta,jend
-            do i=ista,iend
               if(soot(i,j,l,1)<spval.and.soot(i,j,l,2)<spval)then
-               bccb(i,j)=bccb(i,j)+(soot(i,j,l,1)+soot(i,j,l,2))* &
-               dpres(i,j,l)/grav
+                 bccb(i,j)=bccb(i,j)+(soot(i,j,l,1)+soot(i,j,l,2))* &
+                 dpres(i,j,l)/grav
               endif
 
               if(waso(i,j,l,1)<spval.and.waso(i,j,l,2)<spval)then
-               occb(i,j)=occb(i,j)+ (waso(i,j,l,1)+waso(i,j,l,2))* &
-               dpres(i,j,l)/grav
+                 occb(i,j)=occb(i,j)+ (waso(i,j,l,1)+waso(i,j,l,2))* &
+                 dpres(i,j,l)/grav
               endif
-            enddo
-          enddo
-        end do
 
-        if(nasa_on) then
-          no3cb=0.0
-          nh4cb=0.0
-          do l=1,lm
-            do j=jsta,jend
-              do i=ista,iend
-                if(no3(i,j,l,1)<spval .and. no3(i,j,l,2)<spval .and. &
-                   no3(i,j,l,3)<spval) then
-                   no3cb(i,j)=no3cb(i,j)+ (no3(i,j,l,1)+no3(i,j,l,2)+ &
-                   no3(i,j,l,3) ) * dpres(i,j,l)/grav
-                endif
-                if(nh4(i,j,l,1)<spval)then
-                   nh4cb(i,j)=nh4cb(i,j)+ nh4(i,j,l,1)* &
-                   dpres(i,j,l)/grav
-                endif
-              enddo
-            enddo
-          end do 
-        endif !end nasa_on
-
-        sulfcb=0.0
-        pp25cb=0.0
-        pp10cb=0.0
-        do l=1,lm
-          do j=jsta,jend
-            do i=ista,iend
               if(suso(i,j,l,1)<spval)then
                 sulfcb(i,j)=sulfcb(i,j)+ suso(i,j,l,1)* &
                   dpres(i,j,l)/grav
               endif
+
               if(pp25(i,j,l,1)<spval)then
                 pp25cb(i,j)=pp25cb(i,j)+ pp25(i,j,l,1)* &
                   dpres(i,j,l)/grav
               endif
+
               if(pp10(i,j,l,1)<spval)then
                 pp10cb(i,j)=pp10cb(i,j)+ pp10(i,j,l,1)* &
                   dpres(i,j,l)/grav
               endif
+
             enddo
           enddo
-        enddo ! do loop for l
- 
+        enddo
+
+           if(nasa_on) then
+               no3cb=0.0
+               nh4cb=0.0
+              do l=1,lm
+                do j=jsta,jend
+                  do i=ista,iend
+                    if(no3(i,j,l,1)<spval .and. no3(i,j,l,2)<spval .and. &
+                       no3(i,j,l,3)<spval) then
+                       no3cb(i,j)=no3cb(i,j)+ (no3(i,j,l,1)+no3(i,j,l,2)+ &
+                       no3(i,j,l,3) ) * dpres(i,j,l)/grav
+                    endif
+                    if(nh4(i,j,l,1)<spval)then
+                       nh4cb(i,j)=nh4cb(i,j)+ nh4(i,j,l,1)* &
+                       dpres(i,j,l)/grav
+                    endif
+                  enddo
+                enddo
+              end do 
+           endif !end nasa_on
+
         l=lm
         do j=jsta,jend
           do i=ista,iend
