@@ -3222,7 +3222,7 @@
   dimensions = (horizontal_loop_extent,vertical_layer_dimension)
   type = real
   kind = kind_phys
-  active = (do_smoke_coupling .or. flag_for_chemistry_package_coupling)
+  active = (flag_for_chemistry_coupling .or. flag_for_chemistry_package_coupling)
 [nwfa2d]
   standard_name = tendency_of_hygroscopic_aerosols_at_surface_adjacent_layer
   long_name = instantaneous water-friendly sfc aerosol source
