@@ -9,7 +9,7 @@
 [submodule "ccpp/physics"]
   path = ccpp/physics
   url = https://github.com/zhanglikate/ccpp-physics
-  branch = catchem
+  branch = thom-cat
 [submodule "upp"]
   path = upp
   url = https://github.com/zhanglikate/UPP
