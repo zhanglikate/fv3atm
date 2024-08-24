@@ -4564,12 +4564,12 @@ module post_fv3
               end do 
            endif !end nasa_on
 
-        l=lm
         do j=jsta,jend
           do i=ista,iend
-
+            do l=1,lm
             tv = max(t(i,j,l) * (h1+d608*MAX(q(I,J,L),1e-8)),1e-8)
             rhomid(i,j,l) = pmid(i,j,l) / (rd*tv)
+            enddo
 
             dustcb(i,j) = MAX(dustcb(i,j), 0.0)
             dustallcb(i,j) = MAX(dustallcb(i,j), 0.0)
@@ -4585,6 +4585,7 @@ module post_fv3
             pp25cb(i,j) = MAX(pp25cb(i,j), 0.0)
             pp10cb(i,j) = MAX(pp10cb(i,j), 0.0)
 
+            l=lm
            ! Surface PM25 dust and seasalt      
            dustpm(i,j)=(dust(i,j,l,1)+0.38*dust(i,j,l,2))*rhomid(i,j,l) !ug/m3
            dustpm10(i,j)=(dust(i,j,l,1)+dust(i,j,l,2)+dust(i,j,l,3)+ &
