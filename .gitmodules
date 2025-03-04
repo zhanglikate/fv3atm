@@ -13,4 +13,4 @@
 [submodule "upp"]
   path = upp
   url = https://github.com/zhanglikate/UPP
-  branch = catchem
+  branch = catchem-2025
