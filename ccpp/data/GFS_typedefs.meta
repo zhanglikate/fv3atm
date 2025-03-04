@@ -4905,6 +4905,12 @@
   units = flag
   dimensions = ()
   type = logical
+[gtaerosol]
+  standard_name = do_gocart_aerosol_awareness
+  long_name = flag for gocart aerosol-aware physics for example the thompson microphysics
+  units = flag
+  dimensions = ()
+  type = logical
 [lradar]
   standard_name = flag_for_radar_reflectivity
   long_name = flag for radar reflectivity
@@ -8274,6 +8280,13 @@
 [aer_nm]
   standard_name = mass_mixing_ratio_of_aerosol_from_gocart_or_merra2
   long_name = mass mixing ratio of aerosol from gocart or merra2
+  units = kg kg-1
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension,number_of_aerosol_tracers_MG)
+  type = real
+  kind = kind_phys
+[aer_mr]
+  standard_name = mass_mixing_ratio_of_aerosol_from_gocart_or_merra2_mp
+  long_name = mass mixing ratio of aerosol from gocart or merra2 for mp
   units = kg kg-1
   dimensions = (horizontal_loop_extent,vertical_layer_dimension,number_of_aerosol_tracers_MG)
   type = real

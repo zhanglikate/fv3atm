@@ -1025,6 +1025,7 @@ module GFS_typedefs
     !--- Thompson's microphysical parameters
     logical              :: ltaerosol       !< flag for aerosol version
     logical              :: mraerosol       !< flag for merra2_aerosol_aware
+    logical              :: gtaerosol       !< flag for gocart_aerosol_aware
     logical              :: lradar          !< flag for radar reflectivity
     real(kind=kind_phys) :: nsfullradar_diag!< seconds between resetting radar reflectivity calculation
     real(kind=kind_phys) :: ttendlim        !< temperature tendency limiter per time step in K/s
@@ -1784,6 +1785,7 @@ module GFS_typedefs
     real (kind=kind_phys), pointer :: in_nm    (:,:)   => null()  !< IN number concentration
     real (kind=kind_phys), pointer :: ccn_nm   (:,:)   => null()  !< CCN number concentration
     real (kind=kind_phys), pointer :: aer_nm   (:,:,:) => null()  !< GOCART aerosol climo
+    real (kind=kind_phys), pointer :: aer_mr   (:,:,:) => null()  !< GOCART aerosol climo for MP
     real (kind=kind_phys), pointer :: tau_amf  (:    ) => null()  !< nonsta-gw monthly data
 
     integer,               pointer :: imap     (:)     => null()  !< map of local index ix to global index i for this block
@@ -3351,7 +3353,7 @@ module GFS_typedefs
     endif
 
     !--- needed for Thompson's aerosol option
-    if(Model%imp_physics == Model%imp_physics_thompson .and. (Model%ltaerosol .or. Model%mraerosol)) then
+    if(Model%imp_physics == Model%imp_physics_thompson .and. (Model%ltaerosol .or. Model%mraerosol .or. Model%gtaerosol)) then
       allocate (Coupling%nwfa2d (IM))
       allocate (Coupling%nifa2d (IM))
       Coupling%nwfa2d   = clear_val
@@ -3674,6 +3676,7 @@ module GFS_typedefs
     !--- Thompson microphysical parameters
     logical              :: ltaerosol      = .false.            !< flag for aerosol version
     logical              :: mraerosol      = .false.            !< flag for merra2_aerosol_aware
+    logical              :: gtaerosol      = .false.            !< flag for gocart_aerosol_aware
     logical              :: lradar         = .false.            !< flag for radar reflectivity
     real(kind=kind_phys) :: nsfullradar_diag  = -999.0          !< seconds between resetting radar reflectivity calculation, set to <0 for every time step
     real(kind=kind_phys) :: ttendlim       = -999.0             !< temperature tendency limiter, set to <0 to deactivate
@@ -4196,7 +4199,7 @@ module GFS_typedefs
                                lfnc_p0, iovr_convcld, doGP_sgs_cnv, doGP_sgs_mynn,          &
                                rrtmgp_lw_phys_blksz, rrtmgp_sw_phys_blksz,                  &
                           ! IN CCN forcing
-                               iccn, mraerosol,                                             &
+                               iccn, mraerosol, gtaerosol,                                  &
                           !--- microphysical parameterizations
                                imp_physics, psautco, prautco, evpco, wminco,                &
                                fprcp, pdfflag, mg_dcs, mg_qcvar, mg_ts_auto_ice, mg_rhmini, &
@@ -4667,6 +4670,10 @@ module GFS_typedefs
       ntrcaer = ntrcaerm
     else if (iaer/1000 == 2) then
       ntrcaer = ntrcaerm
+      if (mraerosol) then
+      Model%iaerclm = .true.
+      endif
+    
     else
       ntrcaer = 1
     endif
@@ -4850,8 +4857,9 @@ module GFS_typedefs
 !--- Thompson MP parameters
     Model%ltaerosol        = ltaerosol
     Model%mraerosol        = mraerosol
-    if (Model%ltaerosol .and. Model%mraerosol) then
-      write(0,*) 'Logic error: Only one Thompson aerosol option can be true, either ltaerosol or mraerosol)'
+    Model%gtaerosol        = gtaerosol
+    if (Model%ltaerosol .and. Model%mraerosol .and. Model%gtaerosol) then
+      write(0,*) 'Logic error: Only one Thompson aerosol option can be true, either ltaerosol or mraerosol or gtaerosol)'
       stop
     end if
     Model%lradar           = lradar
@@ -6338,6 +6346,7 @@ module GFS_typedefs
       if (Model%me == Model%master) print *,' Using Thompson double moment microphysics', &
                                           ' ltaerosol = ',Model%ltaerosol, &
                                           ' mraerosol = ',Model%mraerosol, &
+                                          ' gtaerosol = ',Model%gtaerosol, &
                                           ' ttendlim =',Model%ttendlim, &
                                           ' ext_diag_thompson =',Model%ext_diag_thompson, &
                                           ' dt_inner =',Model%dt_inner, &
@@ -6884,6 +6893,7 @@ module GFS_typedefs
         print *, ' Thompson microphysical parameters'
         print *, ' ltaerosol         : ', Model%ltaerosol
         print *, ' mraerosol         : ', Model%mraerosol
+        print *, ' gtaerosol         : ', Model%gtaerosol
         print *, ' lradar            : ', Model%lradar
         print *, ' nsfullradar_diag  : ', Model%nsfullradar_diag
         print *, ' lrefres           : ', Model%lrefres
@@ -7482,6 +7492,9 @@ module GFS_typedefs
     ! DH* allocate only for MG? *DH
     allocate (Tbd%aer_nm  (IM,Model%levs,ntrcaer))
     Tbd%aer_nm = clear_val
+
+    allocate (Tbd%aer_mr  (IM,Model%levs,ntrcaer))
+    Tbd%aer_mr = clear_val
 
 !--- tau_amf for  NGWs
     ! DH* allocate only for UGWP ? *DH
