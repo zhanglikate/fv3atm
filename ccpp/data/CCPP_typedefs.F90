@@ -925,12 +925,12 @@ contains
     Interstitial%ntrwx            = 0
 
     ! perform aerosol convective transport and PBL diffusion
-    Interstitial%trans_aero = Model%cplchm .and. Model%trans_trac
+    Interstitial%trans_aero = (Model%cplchm .or. Model%cplchp) .and. Model%trans_trac
 
     if (Model%imp_physics == Model%imp_physics_thompson) then
       if (Model%ltaerosol) then
         Interstitial%nvdiff = 12
-     else if (Model%mraerosol) then
+     else if (Model%mraerosol .or. Model%gtaerosol) then
         Interstitial%nvdiff = 10
       else
         Interstitial%nvdiff = 9
@@ -1006,7 +1006,7 @@ contains
       endif
     endif
 
-    if (Model%cplchm) then
+    if (Model%cplchm .or. Model%cplchp) then
       ! Only the following microphysics schemes are supported with coupled chemistry
       if (Model%imp_physics == Model%imp_physics_zhao_carr) then
         Interstitial%nvdiff = 3
@@ -1021,7 +1021,7 @@ contains
       elseif (Model%imp_physics == Model%imp_physics_thompson) then
         if (Model%ltaerosol) then
           Interstitial%nvdiff = 12
-        else if (Model%mraerosol) then
+        else if (Model%mraerosol .or. Model%gtaerosol ) then
           Interstitial%nvdiff = 10
         else
           Interstitial%nvdiff = 9

@@ -4577,7 +4577,7 @@ module GFS_diagnostics
         do nb = 1,nblks
           ExtDiag(idx)%data(nb)%var2 => Coupling(nb)%nwfa2d
         enddo
-      elseif (Model%mraerosol) then
+      elseif (Model%mraerosol .or. Model%gtaerosol) then
         idx = idx + 1
         ExtDiag(idx)%axes = 3
         ExtDiag(idx)%name = 'nwfa'
@@ -4614,7 +4614,7 @@ module GFS_diagnostics
         do nb = 1,nblks
           ExtDiag(idx)%data(nb)%var2 => Coupling(nb)%nifa2d
         enddo
-      else if (Model%mraerosol) then
+      else if (Model%mraerosol .or. Model%gtaerosol) then
         idx = idx + 1
         ExtDiag(idx)%axes = 3
         ExtDiag(idx)%name = 'nifa'
