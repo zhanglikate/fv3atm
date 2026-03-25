@@ -1599,7 +1599,7 @@ module GFS_typedefs
     logical              :: enh_mix
     real(kind=kind_phys) :: smoke_dir_fdb_coef(7) !< smoke & dust direct feedbck coefficents
     real(kind=kind_phys) :: smoke_conv_wet_coef(3) !< smoke & dust convective wet removal coefficents
-
+    integer              :: wetdep_ls_cpl  !< large scale wetdepostion, 0: Thompson 1: GOCART 
 !--- debug flags
     logical              :: debug
     logical              :: pre_rad         !< flag for testing purpose
@@ -1637,7 +1637,6 @@ module GFS_typedefs
     real(kind=kind_phys) :: seas_emis_scale(5)
     integer              :: vertmix_onoff
     integer              :: aer_ra_frq
-    integer              :: wetdep_ls_cplchp
     character(len=512)   :: restart_inname  ! chemistry restart input directory
     character(len=512)   :: restart_outname ! chemistry restart output directory
 
@@ -4146,7 +4145,6 @@ module GFS_typedefs
     real(kind=kind_phys), dimension(5) :: seas_emis_scale = (/1.0,1.0,1.0,1.0,1.0/)
     integer              :: vertmix_onoff = 1
     integer              :: aer_ra_frq = 60
-    integer              :: wetdep_ls_cplchp  = 1
     character(len=512)   :: restart_inname = ''
     character(len=512)   :: restart_outname = ''
 
@@ -4162,7 +4160,7 @@ module GFS_typedefs
 !--- aerosol scavenging factors
     integer, parameter :: max_scav_factors = 183
     character(len=40)  :: fscav_aero(max_scav_factors) = ''
-
+    integer              :: wetdep_ls_cpl  = 1
     real(kind=kind_phys) :: radar_tten_limits(2) = (/ limit_unspecified, limit_unspecified /)
     integer :: itime
 
@@ -4305,7 +4303,7 @@ module GFS_typedefs
                                max_lon, max_lat, min_lon, min_lat, rhcmax, huge,            &
                                phys_version,                                                &
                           !--- aerosol scavenging factors ('name:value' string array)
-                               fscav_aero,                                                  &
+                               fscav_aero, wetdep_ls_cpl,                                   &
                           !--- chem namelist
                                aer_bc_opt, aer_ic_opt, aer_ra_feedback, aerchem_onoff,      &
                                bio_emiss_opt, biomass_burn_cplchp, chem_conv_tr,            &
@@ -4315,7 +4313,7 @@ module GFS_typedefs
                                gas_bc_opt, gas_ic_opt, gaschem_onoff, kemit, phot_opt,      &
                                photdt, plumerisefire_frq_cplchp, plumerise_flag,            &
                                seas_opt_cplchp, seas_emis_scheme, seas_emis_scale,          &
-                               vertmix_onoff, aer_ra_frq, wetdep_ls_cplchp,                 &
+                               vertmix_onoff, aer_ra_frq,                                   &
                                restart_inname, restart_outname,                             &
                           !--- RRFS-SD namelist
                                dust_drylimit_factor, dust_moist_correction, dust_moist_opt, &
@@ -5080,7 +5078,7 @@ module GFS_typedefs
     Model%oz_phys          = oz_phys
     Model%oz_phys_2015     = oz_phys_2015
     Model%h2o_phys         = h2o_phys
-
+    Model%wetdep_ls_cpl  = wetdep_ls_cpl
     Model%aer_bc_opt        = aer_bc_opt
     Model%aer_ic_opt        = aer_ic_opt
     Model%aer_ra_feedback   = aer_ra_feedback
@@ -5112,7 +5110,6 @@ module GFS_typedefs
     Model%seas_emis_scale   = seas_emis_scale
     Model%vertmix_onoff     = vertmix_onoff
     Model%aer_ra_frq        = aer_ra_frq
-    Model%wetdep_ls_cplchp  = wetdep_ls_cplchp
     Model%restart_inname    = restart_inname
     Model%restart_outname   = restart_outname
 
@@ -7285,7 +7282,6 @@ module GFS_typedefs
       print *, ' seas_emis_scale   : ', Model%seas_emis_scale
       print *, ' vertmix_onoff     : ', Model%vertmix_onoff
       print *, ' aer_ra_frq        : ', Model%aer_ra_frq
-      print *, ' wetdep_ls_cplchp  : ', Model%wetdep_ls_cplchp
       print *, ' restart_inname    : ', Model%restart_inname
       print *, ' restart_outname   : ', Model%restart_outname
       endif
@@ -7332,6 +7328,7 @@ module GFS_typedefs
       print *, ' '
       print *, 'lightning threat indexes'
       print *, ' lightning_threat  : ', Model%lightning_threat
+      print *, ' wetdep_ls_cpl  : ', Model%wetdep_ls_cpl
     endif
 
   end subroutine control_print

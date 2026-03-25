@@ -6942,6 +6942,12 @@
   units = index
   dimensions = ()
   type = integer
+[wetdep_ls_cpl]
+  standard_name = gocart_wetdep_ls_opt
+  long_name = gocart large scale wet deposition option
+  units = index
+  dimensions = ()
+  type = integer
 [aer_bc_opt]
   standard_name = catchem_aer_bc_opt
   long_name = catchem aer bc option not used
@@ -7128,12 +7134,6 @@
 [aer_ra_frq]
   standard_name = catchem_aer_ra_frq
   long_name = catchem aer radiation frequency
-  units = index
-  dimensions = ()
-  type = integer
-[wetdep_ls_cplchp]
-  standard_name = catchem_wetdep_ls_opt
-  long_name = catchem large scale wet deposition option
   units = index
   dimensions = ()
   type = integer
