@@ -53,13 +53,13 @@
       <scheme>sfc_diag</scheme>
       <scheme>sfc_diag_post</scheme>
       <scheme>GFS_surface_generic_post</scheme>
-      <!--      <scheme>catchem_seas_wrapper</scheme>
+      <scheme>catchem_seas_wrapper</scheme>
       <scheme>catchem_dmsemis_wrapper</scheme>
       <scheme>catchem_dust_wrapper</scheme>
       <scheme>catchem_anthropogenic_wrapper</scheme>
       <scheme>catchem_plume_wrapper</scheme>
       <scheme>catchem_settling_wrapper</scheme>
-      <scheme>catchem_drydep_wrapper</scheme> -->
+      <scheme>catchem_drydep_wrapper</scheme>
       <scheme>GFS_PBL_generic_pre</scheme>
       <scheme>satmedmfvdifq</scheme>
       <scheme>GFS_PBL_generic_post</scheme>
@@ -89,10 +89,10 @@
         <scheme>mp_thompson_post</scheme>
         <scheme>GFS_MP_generic_post</scheme>
         <scheme>maximum_hourly_diagnostics</scheme>
-	<!--      <scheme>catchem_wetdep_wrapper</scheme>
+      <scheme>catchem_wetdep_wrapper</scheme>
       <scheme>catchem_gocart_wrapper</scheme>
       <scheme>catchem_rad_wrapper</scheme>
-      <scheme>catchem_diag_wrapper</scheme> -->
+      <scheme>catchem_diag_wrapper</scheme>
       </subcycle>
   </group>
   <group name="stochastics">

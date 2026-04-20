@@ -3387,6 +3387,16 @@ module GFS_typedefs
       Coupling%rrfs_hwp_ave = clear_val
     endif
 
+    if(Model%cplchp .and. ((Model%imfshalcnv == 3).or.(Model%imfdeepcnv == 3))) then
+    !--- needed for smoke aerosol option
+      allocate (Coupling%chem3d    (IM,Model%levs,Model%nchem))
+      allocate (Coupling%ddvel     (IM,Model%ndvel))
+      allocate (Coupling%wetdpc_flux(IM,Model%nchem))
+      Coupling%chem3d     = clear_val
+      Coupling%ddvel      = clear_val
+      Coupling%wetdpc_flux = clear_val
+    endif
+
     if (Model%imfdeepcnv == Model%imfdeepcnv_gf .or. Model%imfdeepcnv == Model%imfdeepcnv_c3) then
       allocate (Coupling%qci_conv (IM,Model%levs))
       Coupling%qci_conv   = clear_val
@@ -4105,11 +4115,11 @@ module GFS_typedefs
     logical :: aero_ind_fdb = .false.     ! RRFS-sd wfa/ifa emission
     logical :: aero_dir_fdb = .false.     ! RRFS-sd smoke/dust radiation feedback
     logical :: rrfs_smoke_debug = .false. ! RRFS-sd plumerise debug
-    logical :: do_smoke_transport = .true.! RRFS-sd convective transport of smoke/dust
+    logical :: do_smoke_transport = .false.! RRFS-sd convective transport of smoke/dust
     logical :: mix_chem = .false.         ! tracer mixing option by MYNN PBL
     logical :: enh_mix  = .false.         ! enhance vertmix option by MYNN PBL
     real(kind=kind_phys) :: smoke_dir_fdb_coef(7) =(/ 0.33, 0.67, 0.02, 0.13, 0.85, 0.05, 0.95 /) !< smoke & dust direct feedbck coefficents
-    real(kind=kind_phys) :: smoke_conv_wet_coef(3) =(/ 0.50, 0.50, 0.50 /) !< smoke & dust convective wet removal coefficents
+    real(kind=kind_phys) :: smoke_conv_wet_coef(1:3) =(/ 0.50, 0.50, 0.50 /) !< smoke & dust convective wet removal coefficents
 
 !-- chem nml variables for UFS-Chem/CATChem
 
@@ -6617,6 +6627,11 @@ module GFS_typedefs
           ! -- generic tracers
       end select
     end do
+
+    if (Model%cplchp .and. (Model%imfshalcnv == 3).or.(Model%imfdeepcnv == 3)) then
+      Model%nchem = Model%ntchm
+      Model%ndvel = Model%ntchm
+    endif
 
     if (Model%ntchm > 0) Model%ntche = Model%ntchs + Model%ntchm - 1
     if (Model%ndchm > 0) Model%ndche = Model%ndchs + Model%ndchm - 1
